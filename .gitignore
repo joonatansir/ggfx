@@ -30,4 +30,4 @@
 # Xcode stuff
 DerivedData/
 build/
-*xcodeproj
+*.xcodeproj
