@@ -8,4 +8,10 @@
 
 #pragma once
 
-const char* loadFile(const char* fileName);
+#include "types.h"
+
+const uint8* loadFile(const char* filename);
+
+uint8* loadImage(const char* filename, int32* x, int32* y, int32* n);
+
+void freeImageData(uint8* imageData);

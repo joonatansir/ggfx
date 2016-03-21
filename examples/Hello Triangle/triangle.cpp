@@ -10,54 +10,75 @@ using namespace ggfx;
 
 int main(void)
 {
-    GLFWwindow* window = createWindow(640, 480, "ggfx");
+    GLFWwindow* window = createWindow(800, 800, "ggfx");
     
     int32 i = 0;
     
     float32 points[] =
     {
-        -0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+        -0.5f, 0.5f, 0.0f,  0.0f, 1.0f, 0.2f,   0.0f, 1.0f,
+        0.5f, 0.5f, 0.0f,   1.0f, 0.5f, 0.2f,   1.0f, 1.0f,
+        0.5f, -0.5f, 0.0f,  0.0f, 0.1f, 1.0f,   1.0f, 0.0f,
     };
     
-    float32 colors[] =
+    uint32 indices[] =
     {
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f,
+        0, 2, 1,
+        0, 3, 2,
     };
     
-    uint32 vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+    buffer vertexBuffer = createBuffer(points, GL_ARRAY_BUFFER, sizeof(points));
+    buffer indexBuffer = createBuffer(indices, GL_ELEMENT_ARRAY_BUFFER, sizeof(indices));
     
-    const char* vertexSource = loadFile("../../examples/Hello Triangle/assets/basic.vert");
-    const char* fragmentSource = loadFile("../../examples/Hello Triangle/assets/basic.frag");
+    texture tex = createTextureFromFile("../../examples/Hello Triangle/assets/checker.png");
+    texture tex2 = createTextureFromFile("../../examples/Hello Triangle/assets/checker2.png");
     
+    const uint8* vertexSource = loadFile("../../examples/Hello Triangle/assets/basic.vert");
+    const uint8* fragmentSource = loadFile("../../examples/Hello Triangle/assets/basic.frag");
+        
     uint32 vertexProgram = createShaderProgram(GL_VERTEX_SHADER, vertexSource);
     uint32 fragmentProgram = createShaderProgram(GL_FRAGMENT_SHADER, fragmentSource);
     
+    delete[] vertexSource;
+    delete[] fragmentSource;
+    
     uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
     
-    uint32 vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    uint32 stride = 8 * sizeof(float32);
     
-    glVertexAttribPointer(0, 3, GL_FLOAT, 0, 3*sizeof(float32), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, 0, stride, 0);
     glEnableVertexAttribArray(0);
+    
+    glVertexAttribPointer(1, 3, GL_FLOAT, 0, stride, (void*)(3*sizeof(float32)));
+    glEnableVertexAttribArray(1);
+    
+    glVertexAttribPointer(2, 2, GL_FLOAT, 0, stride, (void*)(6*sizeof(float32)));
+    glEnableVertexAttribArray(2);
+    
+    int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
+    int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
+    int32 samplerLocation2 = glGetUniformLocation(fragmentProgram, "sampler2");
     
     while (!glfwWindowShouldClose(window))
     {
+        float32 time = (float32)glfwGetTime();
         ++i;
         
         glClearColor(0.5f*sin(i/100.0f)+0.5f, 0.5f*cos(1.5f+i/500.0f)+0.5f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        draw(pipeline);
+        glProgramUniform1f(fragmentProgram, timeLocation, time);
         
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex.id);
+        glProgramUniform1i(fragmentProgram, samplerLocation, 0);
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tex2.id);
+        glProgramUniform1i(fragmentProgram, samplerLocation2, 1);
+        
+        draw(pipeline);
         
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -67,7 +88,7 @@ int main(void)
             glfwSetWindowShouldClose(window, 1);
         }
     }
-    
+
     glfwTerminate();
     return 0;
 }

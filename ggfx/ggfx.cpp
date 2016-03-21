@@ -12,6 +12,7 @@
 #include "GL/gl3w.h"
 
 #include "ggfx.h"
+#include "util.h"
 
 using namespace ggfx;
 
@@ -40,23 +41,30 @@ GLFWwindow* ggfx::createWindow(uint32 width, uint32 height, const char* windowTi
            glGetString(GL_VENDOR),
            glGetString(GL_SHADING_LANGUAGE_VERSION));
     
+    uint32 vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    
     return window;
 }
 
-uint32 ggfx::createShaderProgram(uint32 type, const char* source)
+uint32 ggfx::createShaderProgram(uint32 type, const uint8* source)
 {
-    return glCreateShaderProgramv(type, 1, &source);
+    return glCreateShaderProgramv(type, 1, (const char**)&source);
 }
 
 uint32 ggfx::createProgramPipeline(uint32 vertexProgram, uint32 fragmentProgram)
 {
     char buffer[512];
-    glGetProgramInfoLog(vertexProgram, 512, 0, buffer);
-    printf("LOG_VERTEX: %s", buffer);
+    int32 length;
+    glGetProgramInfoLog(vertexProgram, 512, &length, buffer);
+    if(length != 0)
+        printf("LOG_VERTEX: %s", buffer);
     
     char buffer2[512];
-    glGetProgramInfoLog(fragmentProgram, 512, 0, buffer2);
-    printf("LOG_FRAGMENT: %s", buffer);
+    glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
+    if(length != 0)
+        printf("LOG_FRAGMENT: %s", buffer);
     
     uint32 pipeline;
     glGenProgramPipelines(1, &pipeline);
@@ -67,13 +75,51 @@ uint32 ggfx::createProgramPipeline(uint32 vertexProgram, uint32 fragmentProgram)
     return pipeline;
 }
 
+buffer ggfx::createBuffer(void* data, uint32 type, uint32 size)
+{
+    buffer newBuffer = {};
+    newBuffer.type = type;
+    newBuffer.size = size;
+    
+    glGenBuffers(1, &newBuffer.id);
+    glBindBuffer(newBuffer.type, newBuffer.id);
+    glBufferData(newBuffer.type, size, data, GL_STATIC_DRAW);
+    
+    return newBuffer;
+}
+
+texture ggfx::createTextureFromFile(const char* filename)
+{
+    texture newTexture = {};
+    
+    int32 x, y, n;
+    uint8* imageData = loadImage(filename, &x, &y, &n);
+
+    assert(imageData);
+    
+    glGenTextures(1, &newTexture.id);
+    glBindTexture(GL_TEXTURE_2D, newTexture.id);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    freeImageData(imageData);
+    
+    return newTexture;
+}
+
 void ggfx::draw(uint32 pipeline)
 {
     glBindProgramPipeline(pipeline);
     
-    //draw
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     
-    //glBindProgramPipeline(0);
+    glBindProgramPipeline(0);
 }
 
 
