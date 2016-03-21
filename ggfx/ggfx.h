@@ -8,17 +8,27 @@
 
 #pragma once
 
-#include <cstdint>
+#include "GLFW/glfw3.h"
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
+#include "types.h"
 
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
+#define GGFX_DEBUG 1
 
-typedef float float32;
-typedef double float64;
+namespace ggfx
+{
+    struct buffer
+    {
+        uint32 id;
+        void* data;
+    };
+
+    GLFWwindow* createWindow(uint32 width, uint32 height, const char* windowTitle);
+    
+    uint32 createShaderProgram(uint32 type, const char* source);
+    
+    uint32 createProgramPipeline(uint32 vertexProgram, uint32 fragmentProgram);
+    
+    buffer createBuffer();
+    
+    void draw(uint32 pipeline);
+}
