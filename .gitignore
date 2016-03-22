@@ -20,7 +20,7 @@
 *.lai
 *.la
 *.a
-*.lib
+# *.lib
 
 # Executables
 *.exe
@@ -31,3 +31,14 @@
 DerivedData/
 build/
 *.xcodeproj
+
+# Visual studio
+x64/
+ipch/
+.vs/
+Debug/
+*.pdb
+*.sdf
+*.sln
+*.opendb
+*.vcxproj*

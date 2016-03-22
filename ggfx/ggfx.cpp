@@ -22,19 +22,18 @@ namespace ggfx
         assert(success);
         
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
         
         GLFWwindow* window = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
-        
         assert(window);
         
-        success = gl3wInit();
-        assert(success);
-        
         glfwMakeContextCurrent(window);
+        
+        int32 failure = gl3wInit();
+        assert(!failure);
         
         printf("%s - %s, %s, %s\n", glGetString(GL_VERSION),
                                     glGetString(GL_RENDERER),
@@ -69,7 +68,7 @@ namespace ggfx
         uint32 pipeline;
         glGenProgramPipelines(1, &pipeline);
         glBindProgramPipeline(pipeline);
-        
+
         glUseProgramStages(pipeline, GL_VERTEX_SHADER_BIT, vertexProgram);
         glUseProgramStages(pipeline, GL_FRAGMENT_SHADER_BIT, fragmentProgram);
         

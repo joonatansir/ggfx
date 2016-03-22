@@ -9,7 +9,11 @@
 
 using namespace ggfx;
 
-int main(void)
+int CALLBACK WinMain(
+    _In_ HINSTANCE hInstance,
+    _In_ HINSTANCE hPrevInstance,
+    _In_ LPSTR     lpCmdLine,
+    _In_ int       nCmdShow)
 {
     GLFWwindow* window = createWindow(800, 800, "ggfx");
     
@@ -30,11 +34,11 @@ int main(void)
     buffer vertexBuffer = createBuffer(points, GL_ARRAY_BUFFER, sizeof(points));
     buffer indexBuffer = createBuffer(indices, GL_ELEMENT_ARRAY_BUFFER, sizeof(indices));
     
-    texture tex = createTextureFromFile("../../examples/00 Hello Triangle/assets/checker.png");
-    texture tex2 = createTextureFromFile("../../examples/00 Hello Triangle/assets/checker2.png");
+    texture tex = createTextureFromFile("examples/00 Hello Triangle/assets/checker.png");
+    texture tex2 = createTextureFromFile("examples/00 Hello Triangle/assets/checker2.png");
     
-    const uint8* vertexSource = loadFile("../../examples/00 Hello Triangle/assets/basic.vert");
-    const uint8* fragmentSource = loadFile("../../examples/00 Hello Triangle/assets/basic.frag");
+    const uint8* vertexSource = loadFile("examples/00 Hello Triangle/assets/basic.vert");
+    const uint8* fragmentSource = loadFile("examples/00 Hello Triangle/assets/basic.frag");
         
     uint32 vertexProgram = createShaderProgram(GL_VERTEX_SHADER, vertexSource);
     uint32 fragmentProgram = createShaderProgram(GL_FRAGMENT_SHADER, fragmentSource);

@@ -25,7 +25,7 @@ namespace ggfx
         if(file)
         {
             fseek(file, 0, SEEK_END);
-            uint64 fileSize = ftell(file);
+            uint32 fileSize = ftell(file);
             fseek(file, 0, SEEK_SET);
             
             result = new uint8[fileSize + 1];
