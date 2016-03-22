@@ -10,8 +10,11 @@
 
 #include "types.h"
 
-const uint8* loadFile(const char* filename);
+namespace ggfx
+{
+    const uint8* loadFile(const char* filename);
 
-uint8* loadImage(const char* filename, int32* x, int32* y, int32* n);
+    uint8* loadImage(const char* filename, int32* x, int32* y, int32* n);
 
-void freeImageData(uint8* imageData);
+    void freeImageData(uint8* imageData);
+}

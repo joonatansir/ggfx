@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "GL/gl3w.h"
+#include "glm/glm.hpp"
 
 #include "ggfx.h"
 #include "util.h"
@@ -11,8 +12,6 @@ using namespace ggfx;
 int main(void)
 {
     GLFWwindow* window = createWindow(800, 800, "ggfx");
-    
-    int32 i = 0;
     
     float32 points[] =
     {
@@ -31,11 +30,11 @@ int main(void)
     buffer vertexBuffer = createBuffer(points, GL_ARRAY_BUFFER, sizeof(points));
     buffer indexBuffer = createBuffer(indices, GL_ELEMENT_ARRAY_BUFFER, sizeof(indices));
     
-    texture tex = createTextureFromFile("../../examples/Hello Triangle/assets/checker.png");
-    texture tex2 = createTextureFromFile("../../examples/Hello Triangle/assets/checker2.png");
+    texture tex = createTextureFromFile("../../examples/00 Hello Triangle/assets/checker.png");
+    texture tex2 = createTextureFromFile("../../examples/00 Hello Triangle/assets/checker2.png");
     
-    const uint8* vertexSource = loadFile("../../examples/Hello Triangle/assets/basic.vert");
-    const uint8* fragmentSource = loadFile("../../examples/Hello Triangle/assets/basic.frag");
+    const uint8* vertexSource = loadFile("../../examples/00 Hello Triangle/assets/basic.vert");
+    const uint8* fragmentSource = loadFile("../../examples/00 Hello Triangle/assets/basic.frag");
         
     uint32 vertexProgram = createShaderProgram(GL_VERTEX_SHADER, vertexSource);
     uint32 fragmentProgram = createShaderProgram(GL_FRAGMENT_SHADER, fragmentSource);
@@ -63,9 +62,8 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         float32 time = (float32)glfwGetTime();
-        ++i;
         
-        glClearColor(0.5f*sin(i/100.0f)+0.5f, 0.5f*cos(1.5f+i/500.0f)+0.5f, 0.2f, 1.0f);
+        glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
         glProgramUniform1f(fragmentProgram, timeLocation, time);

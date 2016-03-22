@@ -12,8 +12,6 @@
 
 #include "types.h"
 
-#define GGFX_DEBUG 1
-
 namespace ggfx
 {
     struct buffer
@@ -40,6 +38,3 @@ namespace ggfx
     
     void draw(uint32 pipeline);
 }
-
-
-
