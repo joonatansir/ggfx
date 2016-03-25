@@ -232,7 +232,7 @@ namespace detail
 	typedef detail::uint16					uint16;
 	typedef detail::uint32					uint32;
 	typedef detail::uint64					uint64;
-
+    
 	/// @addtogroup core_precision
 	/// @{
 

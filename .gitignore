@@ -42,3 +42,9 @@ Debug/
 *.sln
 *.opendb
 *.vcxproj*
+
+# Renderdoc
+*.cap
+
+# ImGUI
+imgui.ini

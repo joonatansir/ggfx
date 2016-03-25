@@ -9,7 +9,8 @@
 #include <cassert>
 #include <cstdio>
 
-#include "GL/gl3w.h"
+#include <GL/gl3w.h>
+#include <imgui/imgui.h>
 
 #include "ggfx.h"
 #include "util.h"
@@ -22,7 +23,6 @@ namespace ggfx
         assert(success);
         
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -43,10 +43,10 @@ namespace ggfx
         uint32 vao;
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
-        
+
         return window;
     }
-    
+
     uint32 createShaderProgram(uint32 type, const uint8* source)
     {
         return glCreateShaderProgramv(type, 1, (const char**)&source);
@@ -87,6 +87,8 @@ namespace ggfx
         glBindBuffer(newBuffer.type, newBuffer.id);
         
         glBufferData(newBuffer.type, size, data, GL_STATIC_DRAW);
+
+        glBindBuffer(newBuffer.type, 0);
         
         return newBuffer;
     }
@@ -106,6 +108,8 @@ namespace ggfx
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
         glGenerateMipmap(GL_TEXTURE_2D);
         
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         
@@ -120,8 +124,10 @@ namespace ggfx
     {
         glBindProgramPipeline(pipeline);
         
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        //glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
         
-        glBindProgramPipeline(0);
+        //glBindProgramPipeline(0);
     }
 }
