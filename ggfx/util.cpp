@@ -6,8 +6,8 @@
 //  Copyright © 2016 Joonatan Sörensen. All rights reserved.
 //
 
-#include <cstdio>
-#include <cassert>
+#include <stdio.h>
+#include <assert.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -21,7 +21,7 @@ namespace ggfx
     {
         uint8* result = 0;
         
-        FILE* file = fopen(filename, "r");
+        FILE* file = fopen(filename, "rb");
         if(file)
         {
             fseek(file, 0, SEEK_END);
@@ -30,7 +30,8 @@ namespace ggfx
             
             result = new uint8[fileSize + 1];
             
-            fread(result, fileSize, 1, file);
+            size_t bytesRead = fread(result, fileSize, 1, file);
+            //assert(bytesRead == fileSize);
             result[fileSize] = 0;
             
             fclose(file);
