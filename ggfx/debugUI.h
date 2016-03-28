@@ -15,7 +15,7 @@ namespace ggfx
         ~DebugUI();
 
         void createDebugUI(GLFWwindow* window);
-        void newDebugUIFrame(GLFWwindow* window);
+        void newFrame(GLFWwindow* window);
         void renderDebugUI(ImDrawData* drawData);
         void createDebugUIObjects();
 

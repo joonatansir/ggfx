@@ -15,6 +15,9 @@
 #include "DebugUI.h"
 #include "resources.h"
 #include "App.h"
+#include "Input.h"
+
+static const float32 PI = 3.14159f;
 
 using namespace ggfx;
 
@@ -25,14 +28,17 @@ int CALLBACK WinMain(
     _In_ int       nCmdShow)
 {
     App app(1280, 720, "ggfx");
+
     DebugUI ui(app.getWindow());
 
     glViewport(0, 0, 1280, 720);
 
+    Input::InitInput(app.getWindow());
+
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string error;
-    bool success = tinyobj::LoadObj(shapes, materials, error, assetPaths[teapot]);
+    bool success = tinyobj::LoadObj(shapes, materials, error, assetPaths[dragon]);
     if (!success)
     {
         printf("obj loading failed! %s", error.c_str());
@@ -80,7 +86,7 @@ int CALLBACK WinMain(
     int32 viewTransformLocation = glGetUniformLocation(vertexProgram, "view");
     int32 projectionTransformLocation = glGetUniformLocation(vertexProgram, "projection");
 
-    glm::mat4 projection = glm::perspective(glm::pi<float>()/4.0f, (float)1280 / 720, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(PI/4.0f, (float)1280 / 720, 0.1f, 1000.0f);
 
     bool showWindow = true;
 
@@ -95,44 +101,95 @@ int CALLBACK WinMain(
     char buffer2[512];
     glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
 
-    glm::vec3 cameraPos;
+    //const uint8* stuff = loadFile(assetPaths[dragon]);
 
+    glm::mat4 view;
+    glm::vec3 cameraPos = glm::vec3(0.0f);
+    glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 1.0f);
+    float32 cameraAngle = 0.0f;
+    float32 cameraAngleY = 0.0f;
+    float32 cameraZ = 0.0f;
+
+    bool isMiddleButtonHeld = false;
+
+    //Object
+    float32 scaleAmount = 1.0f;
+    float32 rotationAmount = 0.0f;
+    glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
+    
     while (!app.shouldClose())
     {
-        app.pollEvents();
-        
         float32 time = (float32)glfwGetTime();
+        static float32 lastFrameTime = time;
+        float32 dt = time - lastFrameTime;
+        lastFrameTime = time;
 
-        ui.newDebugUIFrame(app.getWindow());
+        Input::update(app.getWindow());
+        app.pollEvents();
+        ui.newFrame(app.getWindow());
 
         //object
         glm::mat4 world;
-        glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
-        float32 scaleAmount = 1.0f;//0.5f*(sin(time)+2.0f);
         glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
         glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
         world = glm::translate(world, pos);
         world = glm::scale(world, scale);
-        world = glm::rotate(world, 0.0f, rotation);
+        world = glm::rotate(world, rotationAmount, rotation);
         
-        //camera
-        glm::mat4 view;
-        glm::vec3 cameraPosition(sin(time)*10.0f, 0.0f, cos(time)*10.0f);
-        view = glm::lookAt(cameraPosition + cameraPos, pos, glm::vec3(0.0f, 1.0f, 0.0f));
+        cameraZ += Input::scrollOffset.y * 0.5f;
+        view = glm::lookAt(cameraPos, pos, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        int32 shiftStatus = glfwGetKey(app.getWindow(), GLFW_KEY_LEFT_SHIFT);
+        int32 status = glfwGetMouseButton(app.getWindow(), GLFW_MOUSE_BUTTON_MIDDLE);
+        if (status == GLFW_PRESS || Input::scrollOffset.y != 0.0f)
+        {
+            double x, y;
+            glfwGetCursorPos(app.getWindow(), &x, &y);
+
+            static glm::vec3 lastCursorPosition;
+            glm::vec3 newCursorPosition(x, y, 0);
+
+            if (!isMiddleButtonHeld)
+            {
+                lastCursorPosition = newCursorPosition;
+                isMiddleButtonHeld = true;
+            }
+
+            glm::vec3 offset = newCursorPosition - lastCursorPosition;
+
+            float32 dist = cameraZ;
+
+            cameraAngle += offset.x * dt;
+            cameraAngleY += offset.y * dt;
+
+            cameraPos.x = -sin(cameraAngle) * cos(cameraAngleY) * dist;
+            cameraPos.y = -sin(cameraAngleY) * dist;
+            cameraPos.z = cos(cameraAngle) * cos(cameraAngleY) * dist;
+
+            lastCursorPosition = newCursorPosition;
+        }
+        else if (status == GLFW_RELEASE)
+        {
+            isMiddleButtonHeld = false;
+        }
 
         if (showWindow)
         {
             ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
             ImGui::Begin("Debug", &showWindow);
             ImGui::Text("Hello world!");
-            ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::PushItemWidth(ImGui::GetWindowWidth()*0.2f);
             ImGui::SliderFloat("X", &cameraPos[0], -50.0f, 50.0f);
             ImGui::SameLine();
             ImGui::SliderFloat("Y", &cameraPos[1], -50.0f, 50.0f);
             ImGui::SameLine();
             ImGui::SliderFloat("Z", &cameraPos[2], -50.0f, 50.0f);
-            ImGui::Text("%f, %f, %f", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+            ImGui::Text("dt %.3f ms", dt * 1000.0f);
+
+            ImGui::Text("scrollX: %f, scrollY: %f", Input::scrollOffset.x, Input::scrollOffset.y);
+            ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
+
             ImGui::End();
         }
 
@@ -146,7 +203,13 @@ int CALLBACK WinMain(
         }
 
         {
+            //ImGui::TextUnformatted((const char *)stuff);
             //ImGui::ShowTestWindow();
+            ImGui::Begin("Object");
+            ImGui::SliderFloat3("Position", &pos[0], -100.0f, 100.0f);
+            ImGui::SliderFloat("Scale", &scaleAmount, 0.1f, 100.0f);
+            ImGui::SliderAngle("Rotation", &rotationAmount);
+            ImGui::End();
         }
 
         glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);

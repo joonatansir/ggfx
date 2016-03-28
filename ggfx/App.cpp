@@ -16,7 +16,7 @@ App::~App()
 
 bool App::shouldClose()
 {
-    return !glfwWindowShouldClose(m_window);
+    return glfwWindowShouldClose(m_window);
 }
 
 void App::pollEvents()
@@ -46,6 +46,7 @@ void App::createWindow(uint32 width, uint32 height, const char * title)
     assert(m_window = glfwCreateWindow(width, height, title, NULL, NULL));
 
     glfwMakeContextCurrent(m_window);
+    glfwSwapInterval(1);
 
     assert(!gl3wInit());
 

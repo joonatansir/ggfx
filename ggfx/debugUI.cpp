@@ -2,6 +2,7 @@
 
 #include "debugUI.h"
 #include "types.h"
+#include "Input.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -9,7 +10,6 @@
 using namespace ggfx;
 
 static void mouseClickCallback(GLFWwindow* window, int32 button, int32 action, int32 modifiers);
-static void mouseScrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
 DebugUI::DebugUI(GLFWwindow* window) :
     fontTexture(0),
@@ -59,11 +59,10 @@ void DebugUI::createDebugUI(GLFWwindow* window)
 
     io.ImeWindowHandle = glfwGetWin32Window(window);
 
-    glfwSetScrollCallback(window, mouseScrollCallback);
     glfwSetMouseButtonCallback(window, mouseClickCallback);
 }
 
-void DebugUI::newDebugUIFrame(GLFWwindow* window)
+void DebugUI::newFrame(GLFWwindow* window)
 {
     int32 windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
@@ -93,6 +92,8 @@ void DebugUI::newDebugUIFrame(GLFWwindow* window)
     {
         io.MouseDown[i] = glfwGetMouseButton(window, i) != 0;    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
     }
+
+    io.MouseWheel = (float32)Input::scrollOffset.y;
 
     ImGui::NewFrame();
 }
@@ -287,10 +288,4 @@ void mouseClickCallback(GLFWwindow* window, int32 button, int32 action, int32 mo
         ImGuiIO& io = ImGui::GetIO();
         io.MouseClicked[button] = action == GLFW_PRESS ? true : false;
     }
-}
-
-void mouseScrollCallback(GLFWwindow* window, double xOffset, double yOffset)
-{
-    ImGuiIO& io = ImGui::GetIO();
-    io.MouseWheel = (float)yOffset;
 }
