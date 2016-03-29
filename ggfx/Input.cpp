@@ -16,7 +16,7 @@ static void mouseButtonCallback(GLFWwindow* window, int32 button, int32 action, 
     //TODO: implement
 }
 
-void Input::InitInput(GLFWwindow * window)
+void Input::Init(GLFWwindow * window)
 {
     glfwSetScrollCallback(window, mouseScrollCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);

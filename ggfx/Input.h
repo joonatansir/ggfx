@@ -18,7 +18,7 @@ namespace ggfx
 
     public:
 
-        static void InitInput(GLFWwindow* window);
+        static void Init(GLFWwindow* window);
         static void update(GLFWwindow* window);
 
         static bool GetMouseButton(int32 button);

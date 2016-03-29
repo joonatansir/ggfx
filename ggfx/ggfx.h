@@ -20,11 +20,13 @@ namespace ggfx
         uint32 id;
         uint32 type;
         uint32 size;
+        void* data;
     };
 
     struct texture
     {
         uint32 id;
+        uint32 type;
     };
 
     uint32 createShaderProgram(uint32 type, const uint8* source);

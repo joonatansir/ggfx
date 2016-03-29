@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include <cmath>
 
@@ -16,6 +18,7 @@
 #include "resources.h"
 #include "App.h"
 #include "Input.h"
+#include "Buffer.h"
 
 static const float32 PI = 3.14159f;
 
@@ -28,17 +31,13 @@ int CALLBACK WinMain(
     _In_ int       nCmdShow)
 {
     App app(1280, 720, "ggfx");
-
     DebugUI ui(app.getWindow());
-
-    glViewport(0, 0, 1280, 720);
-
-    Input::InitInput(app.getWindow());
+    Input::Init(app.getWindow());
 
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string error;
-    bool success = tinyobj::LoadObj(shapes, materials, error, assetPaths[dragon]);
+    bool success = tinyobj::LoadObj(shapes, materials, error, assetPaths[cube]);
     if (!success)
     {
         printf("obj loading failed! %s", error.c_str());
@@ -58,25 +57,39 @@ int CALLBACK WinMain(
 
     uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
 
-    uint32 stride = 3 * sizeof(float32);
-
-    buffer vertexBuffer = createBuffer(&shapes[0].mesh.positions[0], GL_ARRAY_BUFFER, shapes[0].mesh.positions.size()*sizeof(float));
-    buffer indexBuffer = createBuffer(&shapes[0].mesh.indices[0], GL_ELEMENT_ARRAY_BUFFER, shapes[0].mesh.indices.size()*sizeof(unsigned int));
+    uint32 positionsSize;
+    uint32 uvsSize;
+    uint32 normalsSize;
+    uint32 indicesSize;
+    uint32* indices;
     
-    glBindBuffer(vertexBuffer.type, vertexBuffer.id);
-    glBindBuffer(indexBuffer.type, indexBuffer.id);
+    float32* data = loadBinaryOBJ(
+        assetPaths[cube_bob], 
+        &indices, 
+        positionsSize,
+        uvsSize,
+        normalsSize,
+        indicesSize);
+    
+    GPUBuffer vertexBuffer = GPUBuffer::create(
+        GL_ARRAY_BUFFER,
+        positionsSize,
+        data,
+        GL_DYNAMIC_DRAW);
 
-    //position
-    glVertexAttribPointer(0, 3, GL_FLOAT, 0, stride, 0);
-    glEnableVertexAttribArray(0);
+    uint32 stride = 8 * sizeof(float32);
+    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
+    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float32));
+    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float32));
 
-    //color
-    //glVertexAttribPointer(1, 3, GL_FLOAT, 0, stride, (void*)(3 * sizeof(float32)));
-    //glEnableVertexAttribArray(1);
+    GPUBuffer indexBuffer = GPUBuffer::create(
+        GL_ELEMENT_ARRAY_BUFFER, 
+        indicesSize,
+        indices,
+        GL_DYNAMIC_DRAW);
 
-    //uvs
-    //glVertexAttribPointer(1, 2, GL_FLOAT, 0, stride, (void*)(3 * sizeof(float32)));
-    //glEnableVertexAttribArray(1);
+    vertexBuffer.bind();
+    indexBuffer.bind();
 
     int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
     int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
@@ -104,11 +117,11 @@ int CALLBACK WinMain(
     //const uint8* stuff = loadFile(assetPaths[dragon]);
 
     glm::mat4 view;
-    glm::vec3 cameraPos = glm::vec3(0.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -5.0f);
     glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 1.0f);
     float32 cameraAngle = 0.0f;
     float32 cameraAngleY = 0.0f;
-    float32 cameraZ = 0.0f;
+    float32 cameraZ = -5.f;
 
     bool isMiddleButtonHeld = false;
 
@@ -230,12 +243,12 @@ int CALLBACK WinMain(
         glProgramUniformMatrix4fv(vertexProgram, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
 
         glBindProgramPipeline(pipeline);
-        glDrawElements(GL_TRIANGLES, (GLsizei)(shapes[0].mesh.indices.size()), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)(indicesSize/sizeof(uint32)), GL_UNSIGNED_INT, 0);
 
-        world = glm::scale(glm::translate(world, glm::vec3(0.0f, -2.0f, 0.0f)), glm::vec3(10.0f, 0.1f, 10.0f));
-        glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
+        //world = glm::scale(glm::translate(world, glm::vec3(0.0f, -2.0f, 0.0f)), glm::vec3(10.0f, 0.1f, 10.0f));
+        //glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
 
-        glDrawElements(GL_TRIANGLES, (GLsizei)(shapes[0].mesh.indices.size()), GL_UNSIGNED_INT, 0);
+        //glDrawElements(GL_TRIANGLES, (GLsizei)(shapes[0].mesh.indices.size()), GL_UNSIGNED_INT, 0);
 
         glBindProgramPipeline(0);
         //draw(pipeline);

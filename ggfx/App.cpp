@@ -50,10 +50,7 @@ void App::createWindow(uint32 width, uint32 height, const char * title)
 
     assert(!gl3wInit());
 
-    printf("%s - %s, %s, %s\n", glGetString(GL_VERSION),
-        glGetString(GL_RENDERER),
-        glGetString(GL_VENDOR),
-        glGetString(GL_SHADING_LANGUAGE_VERSION));
+    glViewport(0, 0, width, height);
 
     //TODO: Remove this from here
     uint32 vao;
