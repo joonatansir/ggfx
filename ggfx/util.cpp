@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <map>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -20,6 +21,19 @@
 
 namespace ggfx
 {
+    struct MeshIndex
+    {
+        uint32 indices[3];
+    };
+
+    inline bool operator <(const MeshIndex& a, const MeshIndex& b)
+    {
+        return a.indices[0] < b.indices[0];
+        return a.indices[1] < b.indices[1];
+        return a.indices[2] < b.indices[2];
+        return false;
+    }
+
     const uint8* loadFile(const char* filename)
     {
         uint8* result = 0;
@@ -90,9 +104,9 @@ namespace ggfx
             uint32 vnSize = vnSizeInBytes / sizeof(float32);
             uint32 fSize = fSizeInBytes / sizeof(uint32);
 
-            glm::tvec3<float32>* positions = new glm::tvec3<float32>[vpSize / 3];
-            glm::tvec2<float32>* uvs = new glm::tvec2<float32>[vtSize / 2];
-            glm::tvec3<float32>* normals = new glm::tvec3<float32>[vnSize / 3];
+            float32* positions = new float32[vpSize];
+            float32* uvs = new float32[vtSize];
+            float32* normals = new float32[vnSize];
             uint32* faceElements = new uint32[fSize];
 
             fread(positions, vpSizeInBytes, 1, file);
@@ -103,29 +117,70 @@ namespace ggfx
             result = new float32[vpSize + vtSize + vnSize];
             *indices = new uint32[fSizeInBytes / sizeof(uint32) / attributeCount];
             
-            uint32 faceElementsCount = fSizeInBytes / sizeof(uint32);
+            uint32 indicesCount = fSizeInBytes / sizeof(uint32) / attributeCount;
             uint32 indicesIndex = 0;
             uint32 stride = 8;
-            for (uint32 i = 0; i < faceElementsCount; i+=3)
+            std::map<MeshIndex, uint32> uniqueIndices;
+            for (uint32 i = 0, k = 0; k < indicesCount; i+=3, k++)
             {
-                (*indices)[indicesIndex++] = faceElements[i];
+                MeshIndex m = { { faceElements[i], faceElements[i + 1], faceElements[i + 2] } };
 
-                result[faceElements[i] * stride + 0] = positions[faceElements[i]].x;
-                result[faceElements[i] * stride + 1] = positions[faceElements[i]].y;
-                result[faceElements[i] * stride + 2] = positions[faceElements[i]].z;
+                uint32 count = uniqueIndices.count(m);
 
-                /*result[faceElements[i + 2] * stride + 3] = normals[faceElements[i + 2]].x;
-                result[faceElements[i + 2] * stride + 4] = normals[faceElements[i + 2]].y;
-                result[faceElements[i + 2] * stride + 5] = normals[faceElements[i + 2]].z;
+                if (count > 0)
+                {
+                    (*indices)[k] = uniqueIndices[m];
+                }
+                else
+                {
+                    uniqueIndices[m] = indicesIndex;
+                    (*indices)[k] = indicesIndex;
 
-                result[faceElements[i + 1] * stride + 6] = uvs[faceElements[i + 1]].x;
-                result[faceElements[i + 1] * stride + 7] = uvs[faceElements[i + 1]].y;*/
+                    result[indicesIndex * stride + 0] = positions[m.indices[0] * 3 + 0];
+                    result[indicesIndex * stride + 1] = positions[m.indices[0] * 3 + 1];
+                    result[indicesIndex * stride + 2] = positions[m.indices[0] * 3 + 2];
+
+                    result[indicesIndex * stride + 3] = normals[m.indices[2] * 3 + 0];
+                    result[indicesIndex * stride + 4] = normals[m.indices[2] * 3 + 1];
+                    result[indicesIndex * stride + 5] = normals[m.indices[2] * 3 + 2];
+
+                    result[indicesIndex * stride + 6] = uvs[m.indices[1] * 2 + 0];
+                    result[indicesIndex * stride + 7] = uvs[m.indices[1] * 2 + 1];
+
+                    indicesIndex++;
+                }
             }
 
-            vpSizeInBytesOut = vpSizeInBytes;
+            vpSizeInBytesOut = indicesIndex * stride * sizeof(float32);
             vtSizeInBytesOut = vtSizeInBytes;
             vnSizeInBytesOut = vnSizeInBytes;
-            fSizeinBytesOut = fSizeInBytes / attributeCount;
+            fSizeinBytesOut = indicesCount * sizeof(float32);
+
+            fclose(file);
+        }
+
+        assert(result);
+
+        return result;
+    }
+
+    float32* loadBOF(const char* filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize)
+    {
+        float32* result = 0;
+
+        FILE* file = fopen(filename, "rb");
+        if (file)
+        {
+            fread(vertexBufferSize, sizeof(uint32), 1, file);
+            fread(indexBufferSize, sizeof(uint32), 1, file);
+
+            result = new float32[*vertexBufferSize];
+            *indices = new uint32[*indexBufferSize];
+
+            fread(result, *vertexBufferSize, 1, file);
+            fread(*indices, *indexBufferSize, 1, file);
+
+            fclose(file);
         }
 
         assert(result);

@@ -49,8 +49,8 @@ void GPUBuffer::enableVexterAttribute(uint32 location, int32 components, uint32 
 {
     bind();
 
-    glVertexAttribPointer(location, components, type, normalized, stride, (void *)offset);
     glEnableVertexAttribArray(location);
+    glVertexAttribPointer(location, components, type, normalized, stride, (void *)offset);
 
     unbind();
 }

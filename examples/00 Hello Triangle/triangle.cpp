@@ -56,40 +56,31 @@ int CALLBACK WinMain(
     delete[] fragmentSource;
 
     uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
-
-    uint32 positionsSize;
-    uint32 uvsSize;
-    uint32 normalsSize;
-    uint32 indicesSize;
+    
     uint32* indices;
-    
-    float32* data = loadBinaryOBJ(
-        assetPaths[cube_bob], 
-        &indices, 
-        positionsSize,
-        uvsSize,
-        normalsSize,
-        indicesSize);
-    
+    uint32 vertexBufferSize;
+    uint32 indexBufferSize;
+    float32* dataBof = loadBOF(assetPaths[fox_bof], &indices, &vertexBufferSize, &indexBufferSize);
+
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
-        positionsSize,
-        data,
+        vertexBufferSize,
+        dataBof,
         GL_DYNAMIC_DRAW);
-
-    uint32 stride = 8 * sizeof(float32);
-    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
-    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float32));
-    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float32));
 
     GPUBuffer indexBuffer = GPUBuffer::create(
         GL_ELEMENT_ARRAY_BUFFER, 
-        indicesSize,
+        indexBufferSize,
         indices,
         GL_DYNAMIC_DRAW);
 
     vertexBuffer.bind();
     indexBuffer.bind();
+
+    uint32 stride = 8 * sizeof(float32);
+    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
+    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float32));
+    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float32));
 
     int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
     int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
@@ -243,7 +234,7 @@ int CALLBACK WinMain(
         glProgramUniformMatrix4fv(vertexProgram, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
 
         glBindProgramPipeline(pipeline);
-        glDrawElements(GL_TRIANGLES, (GLsizei)(indicesSize/sizeof(uint32)), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)(indexBufferSize/sizeof(uint32)), GL_UNSIGNED_INT, 0);
 
         //world = glm::scale(glm::translate(world, glm::vec3(0.0f, -2.0f, 0.0f)), glm::vec3(10.0f, 0.1f, 10.0f));
         //glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
