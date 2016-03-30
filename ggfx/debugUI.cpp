@@ -1,8 +1,9 @@
 #include <GL/gl3w.h>
 
-#include "debugUI.h"
+#include "DebugUI.h"
 #include "types.h"
 #include "Input.h"
+#include "Log.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -34,9 +35,8 @@ DebugUI::~DebugUI()
 
 void DebugUI::createDebugUI(GLFWwindow* window)
 {
-    ImGuiIO& imguiIO = ImGui::GetIO();
-
     ImGuiIO& io = ImGui::GetIO();
+
     io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;                         // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
     io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
     io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
@@ -96,6 +96,8 @@ void DebugUI::newFrame(GLFWwindow* window)
     io.MouseWheel = (float32)Input::scrollOffset.y;
 
     ImGui::NewFrame();
+
+    Log::draw();
 }
 
 void DebugUI::createDebugUIObjects()

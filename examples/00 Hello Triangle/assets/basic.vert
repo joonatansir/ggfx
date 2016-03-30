@@ -13,11 +13,18 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform float time;
+
 void main()
 {
     textureCoord = inTexCoord;
     normal = inNormal;
     position = inPosition;
+    
+    //position.z -= gl_InstanceIDasd;
+    float gap = 3.0;
+    position += vec3(mod(gl_InstanceID, 10) * gap, 0.0, -trunc(gl_InstanceID / 10) * gap);
 
-    gl_Position = projection * view * model * vec4(inPosition, 1.0);
+    gl_Position = projection * view * model * vec4(position, 1.0);
+    
 }

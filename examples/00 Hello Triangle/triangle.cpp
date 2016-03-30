@@ -9,9 +9,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui/imgui.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-
 #include "ggfx.h"
 #include "util.h"
 #include "DebugUI.h"
@@ -19,29 +16,21 @@
 #include "App.h"
 #include "Input.h"
 #include "Buffer.h"
-
-static const float32 PI = 3.14159f;
+#include "Log.h"
 
 using namespace ggfx;
 
+static const float32 PI = 3.14159f;
+
 int CALLBACK WinMain(
-    _In_ HINSTANCE hInstance,
-    _In_ HINSTANCE hPrevInstance,
-    _In_ LPSTR     lpCmdLine,
-    _In_ int       nCmdShow)
+    HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    LPSTR     lpCmdLine,
+    int       nCmdShow)
 {
     App app(1280, 720, "ggfx");
     DebugUI ui(app.getWindow());
     Input::Init(app.getWindow());
-
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string error;
-    bool success = tinyobj::LoadObj(shapes, materials, error, assetPaths[cube]);
-    if (!success)
-    {
-        printf("obj loading failed! %s", error.c_str());
-    }
 
     texture tex = createTextureFromFile(assetPaths[checker_1]);
     texture tex2 = createTextureFromFile(assetPaths[checker_2]); 
@@ -66,7 +55,7 @@ int CALLBACK WinMain(
         GL_ARRAY_BUFFER,
         vertexBufferSize,
         dataBof,
-        GL_DYNAMIC_DRAW);
+        GL_STATIC_DRAW);
 
     GPUBuffer indexBuffer = GPUBuffer::create(
         GL_ELEMENT_ARRAY_BUFFER, 
@@ -77,12 +66,18 @@ int CALLBACK WinMain(
     vertexBuffer.bind();
     indexBuffer.bind();
 
+    /*uint32 size = vertexBufferSize / sizeof(float32);
+    for (uint32 i = 0; i < size; i++)
+    {
+        vertexBuffer.as_float32[i] = dataBof[i];
+    }*/
+
     uint32 stride = 8 * sizeof(float32);
     vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
     vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float32));
     vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float32));
 
-    int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
+    int32 timeLocation = glGetUniformLocation(vertexProgram, "time");
     int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
     int32 samplerLocation2 = glGetUniformLocation(fragmentProgram, "sampler2");
 
@@ -91,8 +86,6 @@ int CALLBACK WinMain(
     int32 projectionTransformLocation = glGetUniformLocation(vertexProgram, "projection");
 
     glm::mat4 projection = glm::perspective(PI/4.0f, (float)1280 / 720, 0.1f, 1000.0f);
-
-    bool showWindow = true;
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -105,8 +98,9 @@ int CALLBACK WinMain(
     char buffer2[512];
     glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
 
-    //const uint8* stuff = loadFile(assetPaths[dragon]);
-
+    Log::print(buffer);
+    Log::print(buffer2);
+    
     glm::mat4 view;
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -5.0f);
     glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -121,6 +115,8 @@ int CALLBACK WinMain(
     float32 rotationAmount = 0.0f;
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
     
+    Log::print("HELLO %d, %d", 999, 123);
+
     while (!app.shouldClose())
     {
         float32 time = (float32)glfwGetTime();
@@ -177,10 +173,9 @@ int CALLBACK WinMain(
             isMiddleButtonHeld = false;
         }
 
-        if (showWindow)
         {
             ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-            ImGui::Begin("Debug", &showWindow);
+            ImGui::Begin("Debug");
             ImGui::Text("Hello world!");
             ImGui::PushItemWidth(ImGui::GetWindowWidth()*0.2f);
             ImGui::SliderFloat("X", &cameraPos[0], -50.0f, 50.0f);
@@ -201,6 +196,12 @@ int CALLBACK WinMain(
             ImGui::SetNextWindowPos(ImVec2(10, 500), ImGuiSetCond_Once);
             ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_Once);
             ImGui::Begin("Shader Log");
+            int32 maxUniformBufferSize;
+            int32 majorVersion;
+            glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
+            glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBufferSize);
+            ImGui::Text("Max uniform buffer size: %d bytes", maxUniformBufferSize);
+            ImGui::Text("Major version: %d", majorVersion);
             ImGui::TextWrapped(buffer);
             ImGui::TextWrapped(buffer2);
             ImGui::End();
@@ -219,7 +220,7 @@ int CALLBACK WinMain(
         glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        glProgramUniform1f(fragmentProgram, timeLocation, time);
+        glProgramUniform1f(vertexProgram, timeLocation, time);
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex.id);
@@ -234,15 +235,15 @@ int CALLBACK WinMain(
         glProgramUniformMatrix4fv(vertexProgram, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
 
         glBindProgramPipeline(pipeline);
-        glDrawElements(GL_TRIANGLES, (GLsizei)(indexBufferSize/sizeof(uint32)), GL_UNSIGNED_INT, 0);
 
-        //world = glm::scale(glm::translate(world, glm::vec3(0.0f, -2.0f, 0.0f)), glm::vec3(10.0f, 0.1f, 10.0f));
-        //glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
+        glDrawElementsInstanced(
+            GL_TRIANGLES, 
+            (GLsizei)(indexBufferSize / sizeof(uint32)), 
+            GL_UNSIGNED_INT,
+            0, 
+            50);
 
-        //glDrawElements(GL_TRIANGLES, (GLsizei)(shapes[0].mesh.indices.size()), GL_UNSIGNED_INT, 0);
-
-        glBindProgramPipeline(0);
-        //draw(pipeline);
+        //glBindProgramPipeline(0);
         
         ImGui::Render();
 

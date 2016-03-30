@@ -36,22 +36,6 @@ namespace ggfx
         return pipeline;
     }
     
-    buffer createBuffer(void* data, uint32 type, uint32 size)
-    {
-        buffer newBuffer = {};
-        newBuffer.type = type;
-        newBuffer.size = size;
-        
-        glGenBuffers(1, &newBuffer.id);
-        glBindBuffer(newBuffer.type, newBuffer.id);
-        
-        glBufferData(newBuffer.type, size, data, GL_STATIC_DRAW);
-
-        glBindBuffer(newBuffer.type, 0);
-        
-        return newBuffer;
-    }
-    
     texture createTextureFromFile(const char* filename)
     {
         texture newTexture = {};

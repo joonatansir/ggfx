@@ -15,14 +15,6 @@
 
 namespace ggfx
 {
-    struct buffer
-    {
-        uint32 id;
-        uint32 type;
-        uint32 size;
-        void* data;
-    };
-
     struct texture
     {
         uint32 id;
@@ -31,7 +23,6 @@ namespace ggfx
 
     uint32 createShaderProgram(uint32 type, const uint8* source);
     uint32 createProgramPipeline(uint32 vertexProgram, uint32 fragmentProgram);
-    buffer createBuffer(void* data, uint32 type, uint32 size);
     texture createTextureFromFile(const char* filename);
     
     void draw(uint32 pipeline);
