@@ -33,6 +33,10 @@ enum ggfxAssets
     cubemap_posz,
     cubemap_vert_shader,
     cubemap_frag_shader,
+    torus_bof,
+    torus_bob,
+    cube_uv_bob,
+    icosphere_bof,
 };
 
 static const char* assetPaths[] =
@@ -66,4 +70,8 @@ static const char* assetPaths[] =
     "examples/00 Hello Triangle/assets/sky/sky_front.bmp",
     "examples/00 Hello Triangle/assets/cubemap.vert",
     "examples/00 Hello Triangle/assets/cubemap.frag",
+    "examples/00 Hello Triangle/assets/torus.bof",
+    "examples/00 Hello Triangle/assets/torus.bob",
+    "examples/00 Hello Triangle/assets/cube_uv.bob",
+    "examples/00 Hello Triangle/assets/icosphere.bof",
 };

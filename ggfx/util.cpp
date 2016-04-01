@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <map>
+#include <unordered_map>
+#include <functional>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -27,12 +29,25 @@ namespace ggfx
         uint32 indices[3];
     };
 
+    static uint32 hashFunction(const MeshIndex& m)
+    {
+        return std::hash<uint32>()(m.indices[0]) ^ 
+               std::hash<uint32>()(m.indices[1]) ^
+               std::hash<uint32>()(m.indices[2]);
+    }
+
+    static bool equalFunction(const MeshIndex& a, const MeshIndex& b)
+    {
+        return a.indices[0] == b.indices[0] &&
+               a.indices[1] == b.indices[1] &&
+               a.indices[2] == b.indices[2];
+    }
+
     inline bool operator <(const MeshIndex& a, const MeshIndex& b)
     {
-        return a.indices[0] < b.indices[0];
-        return a.indices[1] < b.indices[1];
-        return a.indices[2] < b.indices[2];
-        return false;
+        int32 aValue = a.indices[0]*100 + a.indices[1]*10 + a.indices[2];
+        int32 bValue = b.indices[0]*100 + b.indices[1]*10 + b.indices[2];
+        return aValue < bValue;
     }
 
     const uint8* loadFile(const char* filename)
@@ -115,19 +130,20 @@ namespace ggfx
             fread(normals, vnSizeInBytes, 1, file);
             fread(faceElements, fSizeInBytes, 1, file);
 
-            /*for (uint32 i = 0; i < vnSizeInBytes / sizeof(float32) / 3; i+=3)
-            {
-                Log::print("vn: %f, %f, %f\n", normals[i], normals[i + 1], normals[i + 2]);
-            }*/
-
-            result = new float32[vpSize + vtSize + vnSize];
-            *indices = new uint32[fSizeInBytes / sizeof(uint32) / attributeCount];
-            
-            uint32 indicesCount = fSizeInBytes / sizeof(uint32) / attributeCount;
-            uint32 indicesIndex = 0;
             uint32 stride = 8;
-            std::map<MeshIndex, uint32> uniqueIndices;
-            for (uint32 i = 0, k = 0; k < indicesCount; i+=3, k++)
+            *indices = new uint32[fSize / attributeCount];
+            result = new float32[fSize / attributeCount * stride];
+            
+            uint32 indicesCount = fSizeInBytes / sizeof(uint32);
+            uint32 indicesIndex = 0;
+
+            std::unordered_map<
+                MeshIndex, 
+                uint32, 
+                std::function<uint32(const MeshIndex&)>,
+                std::function<bool(const MeshIndex&, const MeshIndex&)>> uniqueIndices(1000, hashFunction, equalFunction);
+
+            for (uint32 i = 0, k = 0; i < indicesCount; i+=3, k++)
             {
                 MeshIndex m = { { faceElements[i], faceElements[i + 1], faceElements[i + 2] } };
 
@@ -160,7 +176,9 @@ namespace ggfx
             vpSizeInBytesOut = indicesIndex * stride * sizeof(float32);
             vtSizeInBytesOut = vtSizeInBytes;
             vnSizeInBytesOut = vnSizeInBytes;
-            fSizeinBytesOut = indicesCount * sizeof(float32);
+            fSizeinBytesOut = fSizeInBytes / attributeCount;
+            
+            realloc(result, vpSizeInBytesOut);
 
             fclose(file);
         }

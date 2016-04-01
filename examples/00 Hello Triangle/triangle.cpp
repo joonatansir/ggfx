@@ -53,8 +53,8 @@ int CALLBACK WinMain(
         assetPaths[cubemap_negz],
     };
 
-    /*Texture cubemap = Texture::createCubeFromFile(filenames);
-    cubemap.bind(GL_TEXTURE2);*/
+    Texture cubemap = Texture::createCubeFromFile(filenames);
+    cubemap.bind(GL_TEXTURE2);
 
     Texture texture = Texture::create2DFromFile(assetPaths[checker_1]);
     Texture texture2 = Texture::create2DFromFile(assetPaths[checker_2]);
@@ -73,14 +73,14 @@ int CALLBACK WinMain(
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
-    float32* dataBof = loadBOF(assetPaths[sphere_bof], &indices, &vertexBufferSize, &indexBufferSize);
+    float32* dataBof = loadBOF(assetPaths[fox_bof], &indices, &vertexBufferSize, &indexBufferSize);
 
-    //uint32* indices2;
-    //uint32 vbs;
-    //uint32 ibs;
-    //uint32 uvs;
-    //uint32 ns;
-    ////float32* dataBob = loadBinaryOBJ(assetPaths[sphere_bob], &indices2, vbs, uvs, ns, ibs);
+    /*uint32* indices2;
+    uint32 vbs;
+    uint32 ibs;
+    uint32 uvs;
+    uint32 ns;
+    float32* dataBob = loadBinaryOBJ(assetPaths[icosphere_bof], &indices2, vbs, uvs, ns, ibs);*/
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
@@ -97,14 +97,14 @@ int CALLBACK WinMain(
     vertexBuffer.bind();
     indexBuffer.bind();
 
-    uint32 size = vertexBufferSize / sizeof(float32);
+    /*uint32 size = vbs / sizeof(float32);
     for (uint32 i = 0; i < size; i+=8)
     {
         Log::print("%d:\n", i/8);
-        Log::print("vp: %f, %f, %f\n", dataBof[i], dataBof[i + 1], dataBof[i + 2]);
-        Log::print("vn: %f, %f, %f\n", dataBof[i + 3], dataBof[i + 4], dataBof[i + 5]);
-        Log::print("vt: %f, %f\n", dataBof[i + 6], dataBof[i + 7]);
-    }
+        Log::print("vp: %f, %f, %f\n", dataBob[i], dataBob[i + 1], dataBob[i + 2]);
+        Log::print("vn: %f, %f, %f\n", dataBob[i + 3], dataBob[i + 4], dataBob[i + 5]);
+        Log::print("vt: %f, %f\n", dataBob[i + 6], dataBob[i + 7]);
+    }*/
 
     uint32 stride = 8 * sizeof(float32);
     vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
