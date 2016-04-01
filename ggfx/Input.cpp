@@ -1,5 +1,6 @@
 #include "Input.h"
 #include "GLFWWindow.h"
+#include "Log.h"
 
 using namespace ggfx;
 

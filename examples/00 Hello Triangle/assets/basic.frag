@@ -9,6 +9,7 @@ out vec4 color;
 uniform float time;
 uniform sampler2D sampler;
 uniform sampler2D sampler2;
+uniform samplerCube cubemapSampler;
 
 void main()
 {
@@ -19,7 +20,7 @@ void main()
     float contribution = max(0.0, dot(lightDir, normal));
     //color = vec4(diffuse * contribution + ambient, 1.0);
     
-    //color = vec4((0.5*normal+0.5), 1.0);
-    color = mix(texture(sampler, textureCoord), texture(sampler2, textureCoord), 0.5*sin(time)+0.5);
-    //color = texture(sampler, textureCoord);
+    color = vec4((0.5*normal+0.5), 1.0);
+    //color = mix(texture(sampler, textureCoord), texture(sampler2, textureCoord), 0.5*sin(time)+0.5);
+    //color = vec4(normal, 1.0);
 }

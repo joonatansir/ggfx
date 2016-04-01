@@ -194,9 +194,9 @@ namespace ggfx
         return result;
     }
 
-    uint8* loadImage(const char* filename, int32* x, int32* y, int32* n)
+    uint8* loadImage(const char* filename, int32* x, int32* y, int32* n, bool flipY)
     {
-        stbi_set_flip_vertically_on_load(true);
+        stbi_set_flip_vertically_on_load(flipY);
         uint8* data = stbi_load(filename, x, y, n, 4);
         assert(data);
         return data;

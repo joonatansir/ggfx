@@ -19,6 +19,6 @@ namespace ggfx
     const uint8* loadFile(const char* filename);
     float32* loadBinaryOBJ(const char* filename, uint32** indices, uint32& positionsCount, uint32& uvsCount, uint32& normalsCount, uint32& indicesCount);
     float32* loadBOF(const char* filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize);
-    uint8* loadImage(const char* filename, int32* x, int32* y, int32* n);
+    uint8* loadImage(const char* filename, int32* x, int32* y, int32* n, bool flipY = true);
     void freeImageData(uint8* imageData);
 }

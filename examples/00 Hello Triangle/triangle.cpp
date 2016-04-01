@@ -31,8 +31,8 @@ int CALLBACK WinMain(
     LPSTR     lpCmdLine,
     int       nCmdShow)
 {
-    uint32 width = 1280;
-    uint32 height = 720;
+    uint32 width = 1600;
+    uint32 height = 900;
 
     Window* window = new Window(width, height, "ggfx");
     App app(window);
@@ -44,21 +44,31 @@ int CALLBACK WinMain(
 
     glViewport(0, 0, width, height);
 
-    Texture texture = Texture::createFromFile(assetPaths[checker_1], GL_TEXTURE_2D);
-    Texture texture2 = Texture::createFromFile(assetPaths[checker_2], GL_TEXTURE_2D);
+    const char* filenames[] = {
+        assetPaths[cubemap_posx],
+        assetPaths[cubemap_negx],
+        assetPaths[cubemap_posy],
+        assetPaths[cubemap_negy],
+        assetPaths[cubemap_posz],
+        assetPaths[cubemap_negz],
+    };
+
+    Texture cubemap = Texture::createCubeFromFile(filenames);
+    cubemap.bind(GL_TEXTURE2);
+
+    Texture texture = Texture::create2DFromFile(assetPaths[checker_1], GL_TEXTURE_2D);
+    Texture texture2 = Texture::create2DFromFile(assetPaths[checker_2], GL_TEXTURE_2D);
     texture2.bind(GL_TEXTURE1);
     texture.bind(GL_TEXTURE0);
 
-    const uint8* vertexSource = loadFile(assetPaths[basic_vert]);
-    const uint8* fragmentSource = loadFile(assetPaths[basic_frag]);
+    uint32 cubemapVertexProgram = createShaderProgramFromFile(assetPaths[cubemap_vert_shader], GL_VERTEX_SHADER);
+    uint32 cubemapFragmentProgram = createShaderProgramFromFile(assetPaths[cubemap_frag_shader], GL_FRAGMENT_SHADER);
 
-    uint32 vertexProgram = createShaderProgram(GL_VERTEX_SHADER, vertexSource);
-    uint32 fragmentProgram = createShaderProgram(GL_FRAGMENT_SHADER, fragmentSource);
-
-    delete[] vertexSource;
-    delete[] fragmentSource;
+    uint32 vertexProgram = createShaderProgramFromFile(assetPaths[basic_vert], GL_VERTEX_SHADER);
+    uint32 fragmentProgram = createShaderProgramFromFile(assetPaths[basic_frag], GL_FRAGMENT_SHADER);
 
     uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
+    uint32 pipeline2 = createProgramPipeline(cubemapVertexProgram, cubemapFragmentProgram);
     
     uint32* indices;
     uint32 vertexBufferSize;
@@ -104,16 +114,19 @@ int CALLBACK WinMain(
     int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
     int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
     int32 samplerLocation2 = glGetUniformLocation(fragmentProgram, "sampler2");
+    int32 cubemapLocation = glGetUniformLocation(cubemapFragmentProgram, "cubemap");
 
     int32 modelTransformLocation = glGetUniformLocation(vertexProgram, "model");
     int32 viewTransformLocation = glGetUniformLocation(vertexProgram, "view");
     int32 projectionTransformLocation = glGetUniformLocation(vertexProgram, "projection");
+    int32 viewCubemap = glGetUniformLocation(cubemapVertexProgram, "view");
 
     glm::mat4 projection = glm::perspective(PI/4.0f, (float)1280 / 720, 0.1f, 1000.0f);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
+    glDepthFunc(GL_LEQUAL);
 
     char buffer[512];
     int32 length;
@@ -122,8 +135,16 @@ int CALLBACK WinMain(
     char buffer2[512];
     glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
 
+    char buffer3[512];
+    glGetProgramInfoLog(cubemapVertexProgram, 512, &length, buffer3);
+
+    char buffer4[512];
+    glGetProgramInfoLog(cubemapFragmentProgram, 512, &length, buffer4);
+
     Log::print(buffer);
     Log::print(buffer2);
+    Log::print(buffer3);
+    Log::print(buffer4);
     
     glm::mat4 view;
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -5.0f);
@@ -246,10 +267,20 @@ int CALLBACK WinMain(
         glProgramUniform1f(fragmentProgram, timeLocation, time);
         glProgramUniform1i(fragmentProgram, samplerLocation, 0);
         glProgramUniform1i(fragmentProgram, samplerLocation2, 1);
-       
+        glProgramUniform1i(cubemapFragmentProgram, cubemapLocation, 2);
+
         glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
         glProgramUniformMatrix4fv(vertexProgram, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
         glProgramUniformMatrix4fv(vertexProgram, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
+        glProgramUniformMatrix4fv(cubemapVertexProgram, viewCubemap, 1, GL_FALSE, &view[0][0]);
+
+        glBindProgramPipeline(pipeline2);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_CULL_FACE);
 
         glBindProgramPipeline(pipeline);
 

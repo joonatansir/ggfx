@@ -25,6 +25,14 @@ enum ggfxAssets
     sphere_bob,
     sphere2_bof,
     cube_uv_bof,
+    cubemap_posx,
+    cubemap_negx,
+    cubemap_posy,
+    cubemap_negy,
+    cubemap_negz,
+    cubemap_posz,
+    cubemap_vert_shader,
+    cubemap_frag_shader,
 };
 
 static const char* assetPaths[] =
@@ -50,4 +58,12 @@ static const char* assetPaths[] =
     "examples/00 Hello Triangle/assets/sphere.bob",
     "examples/00 Hello Triangle/assets/sphere2.bof",
     "examples/00 Hello Triangle/assets/cube_uv.bof",
+    "examples/00 Hello Triangle/assets/sky/sky_right.bmp",
+    "examples/00 Hello Triangle/assets/sky/sky_left.bmp",
+    "examples/00 Hello Triangle/assets/sky/sky_top.bmp",
+    "examples/00 Hello Triangle/assets/sky/sky_bottom.bmp",
+    "examples/00 Hello Triangle/assets/sky/sky_back.bmp",
+    "examples/00 Hello Triangle/assets/sky/sky_front.bmp",
+    "examples/00 Hello Triangle/assets/cubemap.vert",
+    "examples/00 Hello Triangle/assets/cubemap.frag",
 };
