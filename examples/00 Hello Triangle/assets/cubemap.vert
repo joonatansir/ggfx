@@ -5,10 +5,7 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 
-out VS_OUT
-{
-    vec3 coords;
-} vs_out;
+out vec3 coords;
 
 uniform mat4 view;
 
@@ -22,7 +19,7 @@ void main()
         vec3(1.0, 1.0, 1.0)
     );
 
-    vs_out.coords = mat3(view) * vertices[gl_VertexID];
+    coords = mat3(view) * vertices[gl_VertexID];
 
     gl_Position = vec4(vertices[gl_VertexID], 1.0);
 }
