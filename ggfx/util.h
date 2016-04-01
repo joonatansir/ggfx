@@ -8,7 +8,11 @@
 
 #pragma once
 
+#include <assert.h>
+
 #include "types.h"
+
+#define GGASSERT(x) if(!(x)){} 
 
 namespace ggfx
 {

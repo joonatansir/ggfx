@@ -18,6 +18,7 @@
 
 #include "util.h"
 #include "types.h"
+#include "Log.h"
 
 namespace ggfx
 {
@@ -113,6 +114,11 @@ namespace ggfx
             fread(uvs, vtSizeInBytes, 1, file);
             fread(normals, vnSizeInBytes, 1, file);
             fread(faceElements, fSizeInBytes, 1, file);
+
+            /*for (uint32 i = 0; i < vnSizeInBytes / sizeof(float32) / 3; i+=3)
+            {
+                Log::print("vn: %f, %f, %f\n", normals[i], normals[i + 1], normals[i + 2]);
+            }*/
 
             result = new float32[vpSize + vtSize + vnSize];
             *indices = new uint32[fSizeInBytes / sizeof(uint32) / attributeCount];

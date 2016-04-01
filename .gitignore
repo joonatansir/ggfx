@@ -42,6 +42,7 @@ Debug/
 *.sln
 *.opendb
 *.vcxproj*
+*.db
 
 # Renderdoc
 *.cap

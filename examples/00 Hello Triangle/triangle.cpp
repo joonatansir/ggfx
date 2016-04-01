@@ -49,7 +49,14 @@ int CALLBACK WinMain(
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
-    float32* dataBof = loadBOF(assetPaths[fox_bof], &indices, &vertexBufferSize, &indexBufferSize);
+    float32* dataBof = loadBOF(assetPaths[cube_uv_bof], &indices, &vertexBufferSize, &indexBufferSize);
+
+    uint32* indices2;
+    uint32 vbs;
+    uint32 ibs;
+    uint32 uvs;
+    uint32 ns;
+    float32* dataBob = loadBinaryOBJ(assetPaths[sphere_bob], &indices2, vbs, uvs, ns, ibs);
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
@@ -66,18 +73,21 @@ int CALLBACK WinMain(
     vertexBuffer.bind();
     indexBuffer.bind();
 
-    /*uint32 size = vertexBufferSize / sizeof(float32);
-    for (uint32 i = 0; i < size; i++)
+    uint32 size = vertexBufferSize / sizeof(float32);
+    for (uint32 i = 0; i < size; i+=8)
     {
-        vertexBuffer.as_float32[i] = dataBof[i];
-    }*/
+        Log::print("%d:\n", i/8);
+        Log::print("vp: %f, %f, %f\n", dataBof[i], dataBof[i + 1], dataBof[i + 2]);
+        Log::print("vn: %f, %f, %f\n", dataBof[i + 3], dataBof[i + 4], dataBof[i + 5]);
+        Log::print("vt: %f, %f\n", dataBof[i + 6], dataBof[i + 7]);
+    }
 
     uint32 stride = 8 * sizeof(float32);
     vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
     vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float32));
     vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float32));
 
-    int32 timeLocation = glGetUniformLocation(vertexProgram, "time");
+    int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
     int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
     int32 samplerLocation2 = glGetUniformLocation(fragmentProgram, "sampler2");
 
@@ -217,10 +227,11 @@ int CALLBACK WinMain(
             ImGui::End();
         }
 
-        glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
+        //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        glProgramUniform1f(vertexProgram, timeLocation, time);
+        glProgramUniform1f(fragmentProgram, timeLocation, time);
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex.id);
@@ -238,10 +249,10 @@ int CALLBACK WinMain(
 
         glDrawElementsInstanced(
             GL_TRIANGLES, 
-            (GLsizei)(indexBufferSize / sizeof(uint32)), 
+            (GLsizei)(indexBufferSize / sizeof(uint32)),
             GL_UNSIGNED_INT,
             0, 
-            50);
+            1);
 
         //glBindProgramPipeline(0);
         

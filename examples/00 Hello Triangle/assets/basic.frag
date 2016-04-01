@@ -1,8 +1,8 @@
-#version 330 core
+#version 450 core
 
-in vec3 position;
-in vec3 normal;
-in vec2 textureCoord;
+smooth in vec3 position;
+smooth in vec3 normal;
+smooth in vec2 textureCoord;
 
 out vec4 color;
 
@@ -12,6 +12,13 @@ uniform sampler2D sampler2;
 
 void main()
 {
-    //color = mix(texture(sampler, textureCoord), texture(sampler2, textureCoord), 0.5*sin(time)+0.5) + vec4(normal, 1.0);
-    color = vec4(normal, 1.0);
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+
+    vec3 ambient = vec3(0.0, 0.0, 0.0);
+    vec3 diffuse = vec3(1.0, 1.0, 1.0);
+    float contribution = max(0.0, dot(lightDir, normal));
+    //color = vec4(diffuse * contribution + ambient, 1.0);
+    
+    color = vec4((0.5*normal+0.5) * texture(sampler, textureCoord).xyz, 1.0);
+    //color = vec4(textureCoord, 1.0, 1.0);
 }
