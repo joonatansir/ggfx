@@ -15,8 +15,9 @@
 #include "resources.h"
 #include "App.h"
 #include "Input.h"
-#include "Buffer.h"
+#include "GPUBuffer.h"
 #include "Log.h"
+#include "Texture.h"
 
 using namespace ggfx;
 
@@ -32,8 +33,10 @@ int CALLBACK WinMain(
     DebugUI ui(app.getWindow());
     Input::Init(app.getWindow());
 
-    texture tex = createTextureFromFile(assetPaths[checker_1]);
-    texture tex2 = createTextureFromFile(assetPaths[checker_2]); 
+    Texture texture = Texture::createFromFile(assetPaths[checker_1], GL_TEXTURE_2D);
+    Texture texture2 = Texture::createFromFile(assetPaths[checker_2], GL_TEXTURE_2D);
+    texture2.bind(GL_TEXTURE1);
+    texture.bind(GL_TEXTURE0);
 
     const uint8* vertexSource = loadFile(assetPaths[basic_vert]);
     const uint8* fragmentSource = loadFile(assetPaths[basic_frag]);
@@ -49,14 +52,14 @@ int CALLBACK WinMain(
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
-    float32* dataBof = loadBOF(assetPaths[cube_uv_bof], &indices, &vertexBufferSize, &indexBufferSize);
+    float32* dataBof = loadBOF(assetPaths[sphere2_bof], &indices, &vertexBufferSize, &indexBufferSize);
 
     uint32* indices2;
     uint32 vbs;
     uint32 ibs;
     uint32 uvs;
     uint32 ns;
-    float32* dataBob = loadBinaryOBJ(assetPaths[sphere_bob], &indices2, vbs, uvs, ns, ibs);
+    //float32* dataBob = loadBinaryOBJ(assetPaths[sphere_bob], &indices2, vbs, uvs, ns, ibs);
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
@@ -230,15 +233,9 @@ int CALLBACK WinMain(
         //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+
         glProgramUniform1f(fragmentProgram, timeLocation, time);
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex.id);
         glProgramUniform1i(fragmentProgram, samplerLocation, 0);
-        
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, tex2.id);
         glProgramUniform1i(fragmentProgram, samplerLocation2, 1);
        
         glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);

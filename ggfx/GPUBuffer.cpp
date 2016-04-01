@@ -1,6 +1,6 @@
 #include <GL/gl3w.h>
 
-#include "Buffer.h"
+#include "GPUBuffer.h"
 
 using namespace ggfx;
 

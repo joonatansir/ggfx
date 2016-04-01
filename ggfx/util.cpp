@@ -197,7 +197,9 @@ namespace ggfx
     uint8* loadImage(const char* filename, int32* x, int32* y, int32* n)
     {
         stbi_set_flip_vertically_on_load(true);
-        return stbi_load(filename, x, y, n, 4);
+        uint8* data = stbi_load(filename, x, y, n, 4);
+        assert(data);
+        return data;
     }
 
     void freeImageData(uint8* data)
