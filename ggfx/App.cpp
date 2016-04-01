@@ -16,7 +16,10 @@ static void APIENTRY printCallback(
     const GLchar* message, 
     const void* userParam) 
 { 
-    Log::print("OpenGL message: source 0x%04X, type 0x%04X, " "id %u, severity 0x%0X, ’%s’", source, type, id, severity, message); 
+    //Log::print("OpenGL message: source 0x%04X, type 0x%04X, " "id %u, severity 0x%0X, ’%s’", source, type, id, severity, message); 
+    Log::print("OPENGL ERROR id %d: ", id);
+    Log::print(message);
+    Log::print("\n");
 }
 
 App::App(Window* window) :

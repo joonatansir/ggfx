@@ -198,7 +198,7 @@ namespace ggfx
     {
         stbi_set_flip_vertically_on_load(flipY);
         uint8* data = stbi_load(filename, x, y, n, 4);
-        assert(data);
+        assert(x != 0 && y != 0);
         return data;
     }
 

@@ -53,11 +53,11 @@ int CALLBACK WinMain(
         assetPaths[cubemap_negz],
     };
 
-    Texture cubemap = Texture::createCubeFromFile(filenames);
-    cubemap.bind(GL_TEXTURE2);
+    /*Texture cubemap = Texture::createCubeFromFile(filenames);
+    cubemap.bind(GL_TEXTURE2);*/
 
-    Texture texture = Texture::create2DFromFile(assetPaths[checker_1], GL_TEXTURE_2D);
-    Texture texture2 = Texture::create2DFromFile(assetPaths[checker_2], GL_TEXTURE_2D);
+    Texture texture = Texture::create2DFromFile(assetPaths[checker_1]);
+    Texture texture2 = Texture::create2DFromFile(assetPaths[checker_2]);
     texture2.bind(GL_TEXTURE1);
     texture.bind(GL_TEXTURE0);
 
@@ -73,14 +73,14 @@ int CALLBACK WinMain(
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
-    float32* dataBof = loadBOF(assetPaths[sphere2_bof], &indices, &vertexBufferSize, &indexBufferSize);
+    float32* dataBof = loadBOF(assetPaths[sphere_bof], &indices, &vertexBufferSize, &indexBufferSize);
 
-    uint32* indices2;
-    uint32 vbs;
-    uint32 ibs;
-    uint32 uvs;
-    uint32 ns;
-    //float32* dataBob = loadBinaryOBJ(assetPaths[sphere_bob], &indices2, vbs, uvs, ns, ibs);
+    //uint32* indices2;
+    //uint32 vbs;
+    //uint32 ibs;
+    //uint32 uvs;
+    //uint32 ns;
+    ////float32* dataBob = loadBinaryOBJ(assetPaths[sphere_bob], &indices2, vbs, uvs, ns, ibs);
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,

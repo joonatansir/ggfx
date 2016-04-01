@@ -1,5 +1,6 @@
 #include "Texture.h"
 #include "util.h"
+#include "Log.h"
 
 using namespace ggfx;
 

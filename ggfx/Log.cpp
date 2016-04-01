@@ -20,8 +20,6 @@ void Log::print(const char* str, ...)
     log->buffer.appendv(str, args);
     va_end(args);
 
-    log->buffer.append("\n");
-
     log->scrollToBottom = true;
 }
 
