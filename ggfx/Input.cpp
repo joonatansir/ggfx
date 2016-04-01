@@ -1,4 +1,5 @@
 #include "Input.h"
+#include "GLFWWindow.h"
 
 using namespace ggfx;
 
@@ -16,16 +17,16 @@ static void mouseButtonCallback(GLFWwindow* window, int32 button, int32 action, 
     //TODO: implement
 }
 
-void Input::Init(GLFWwindow * window)
+void Input::Init(Window* window)
 {
-    glfwSetScrollCallback(window, mouseScrollCallback);
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetScrollCallback(window->handle->ptr, mouseScrollCallback);
+    glfwSetMouseButtonCallback(window->handle->ptr, mouseButtonCallback);
 }
 
-void Input::update(GLFWwindow* window)
+void Input::update(Window* window)
 {
     float64 x, y;
-    glfwGetCursorPos(window, &x, &y);
+    glfwGetCursorPos(window->handle->ptr, &x, &y);
     mousePosition.x = (float32)x;
     mousePosition.y = (float32)y;
 

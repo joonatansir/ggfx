@@ -18,6 +18,8 @@
 #include "GPUBuffer.h"
 #include "Log.h"
 #include "Texture.h"
+#include "Window.h"
+#include "GLFWWindow.h"
 
 using namespace ggfx;
 
@@ -29,9 +31,18 @@ int CALLBACK WinMain(
     LPSTR     lpCmdLine,
     int       nCmdShow)
 {
-    App app(1280, 720, "ggfx");
-    DebugUI ui(app.getWindow());
-    Input::Init(app.getWindow());
+    uint32 width = 1280;
+    uint32 height = 720;
+
+    Window* window = new Window(width, height, "ggfx");
+    App app(window);
+
+    //TODO: Remove this from here
+    uint32 vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glViewport(0, 0, width, height);
 
     Texture texture = Texture::createFromFile(assetPaths[checker_1], GL_TEXTURE_2D);
     Texture texture2 = Texture::createFromFile(assetPaths[checker_2], GL_TEXTURE_2D);
@@ -130,16 +141,14 @@ int CALLBACK WinMain(
     
     Log::print("HELLO %d, %d", 999, 123);
 
-    while (!app.shouldClose())
+    while (!window->shouldClose())
     {
         float32 time = (float32)glfwGetTime();
         static float32 lastFrameTime = time;
         float32 dt = time - lastFrameTime;
         lastFrameTime = time;
 
-        Input::update(app.getWindow());
-        app.pollEvents();
-        ui.newFrame(app.getWindow());
+        app.update();
 
         //object
         glm::mat4 world;
@@ -152,12 +161,12 @@ int CALLBACK WinMain(
         cameraZ += Input::scrollOffset.y * 0.5f;
         view = glm::lookAt(cameraPos, pos, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        int32 shiftStatus = glfwGetKey(app.getWindow(), GLFW_KEY_LEFT_SHIFT);
-        int32 status = glfwGetMouseButton(app.getWindow(), GLFW_MOUSE_BUTTON_MIDDLE);
+        int32 shiftStatus = glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT);
+        int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_MIDDLE);
         if (status == GLFW_PRESS || Input::scrollOffset.y != 0.0f)
         {
             double x, y;
-            glfwGetCursorPos(app.getWindow(), &x, &y);
+            glfwGetCursorPos(window->handle->ptr, &x, &y);
 
             static glm::vec3 lastCursorPosition;
             glm::vec3 newCursorPosition(x, y, 0);
@@ -255,16 +264,14 @@ int CALLBACK WinMain(
         
         ImGui::Render();
 
-        ui.renderDebugUI(ImGui::GetDrawData());
-
-        app.swapBuffers();
+        app.render();
         
-        if(GLFW_PRESS == glfwGetKey(app.getWindow(), GLFW_KEY_ESCAPE))
+        if(GLFW_PRESS == glfwGetKey(window->handle->ptr, GLFW_KEY_ESCAPE))
         {
-            glfwSetWindowShouldClose(app.getWindow(), 1);
+            glfwSetWindowShouldClose(window->handle->ptr, 1);
         }
     }
 
-    glfwTerminate();
+    delete window;
     return 0;
 }

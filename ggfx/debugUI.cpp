@@ -4,6 +4,7 @@
 #include "types.h"
 #include "Input.h"
 #include "Log.h"
+#include "GLFWWindow.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
@@ -12,7 +13,7 @@ using namespace ggfx;
 
 static void mouseClickCallback(GLFWwindow* window, int32 button, int32 action, int32 modifiers);
 
-DebugUI::DebugUI(GLFWwindow* window) :
+DebugUI::DebugUI(Window* window) :
     fontTexture(0),
     shaderHandle(0),
     vertHandle(0),
@@ -33,7 +34,7 @@ DebugUI::~DebugUI()
 {
 }
 
-void DebugUI::createDebugUI(GLFWwindow* window)
+void DebugUI::createDebugUI(Window* window)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -57,15 +58,15 @@ void DebugUI::createDebugUI(GLFWwindow* window)
     io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
     io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 
-    io.ImeWindowHandle = glfwGetWin32Window(window);
+    io.ImeWindowHandle = glfwGetWin32Window(window->handle->ptr);
 
-    glfwSetMouseButtonCallback(window, mouseClickCallback);
+    glfwSetMouseButtonCallback(window->handle->ptr, mouseClickCallback);
 }
 
-void DebugUI::newFrame(GLFWwindow* window)
+void DebugUI::update(Window* window)
 {
     int32 windowWidth, windowHeight;
-    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwGetWindowSize(window->handle->ptr, &windowWidth, &windowHeight);
 
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)windowWidth, (float)windowHeight);
@@ -77,10 +78,10 @@ void DebugUI::newFrame(GLFWwindow* window)
     if (!fontTexture)
         createDebugUIObjects();
 
-    if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
+    if (glfwGetWindowAttrib(window->handle->ptr, GLFW_FOCUSED))
     {
         double mouse_x, mouse_y;
-        glfwGetCursorPos(window, &mouse_x, &mouse_y);
+        glfwGetCursorPos(window->handle->ptr, &mouse_x, &mouse_y);
         io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);   // Mouse position in screen coordinates (set to -1,-1 if no mouse / on another screen, etc.)
     }
     else
@@ -90,7 +91,7 @@ void DebugUI::newFrame(GLFWwindow* window)
 
     for (int i = 0; i < 3; i++)
     {
-        io.MouseDown[i] = glfwGetMouseButton(window, i) != 0;    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+        io.MouseDown[i] = glfwGetMouseButton(window->handle->ptr, i) != 0;    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
     }
 
     io.MouseWheel = (float32)Input::scrollOffset.y;
@@ -190,7 +191,7 @@ void DebugUI::createDebugUIObjects()
     glBindVertexArray(last_vertex_array);
 }
 
-void DebugUI::renderDebugUI(ImDrawData* drawData)
+void DebugUI::render(ImDrawData* drawData)
 {
     ImGuiIO& io = ImGui::GetIO();
     int fb_width = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);

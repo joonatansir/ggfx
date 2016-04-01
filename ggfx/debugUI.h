@@ -1,9 +1,9 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <imgui/imgui.h>
 
 #include "types.h"
+#include "Window.h"
 
 namespace ggfx
 {
@@ -11,12 +11,12 @@ namespace ggfx
     {
     public:
 
-        DebugUI(GLFWwindow* window);
+        DebugUI(Window* window);
         ~DebugUI();
 
-        void createDebugUI(GLFWwindow* window);
-        void newFrame(GLFWwindow* window);
-        void renderDebugUI(ImDrawData* drawData);
+        void createDebugUI(Window* window);
+        void update(Window* window);
+        void render(ImDrawData* drawData);
         void createDebugUIObjects();
 
     private:

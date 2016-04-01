@@ -1,10 +1,10 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 
 #include "types.h"
+#include "Window.h"
 
 namespace ggfx
 {
@@ -18,8 +18,8 @@ namespace ggfx
 
     public:
 
-        static void Init(GLFWwindow* window);
-        static void update(GLFWwindow* window);
+        static void Init(Window* window);
+        static void update(Window* window);
 
         static bool GetMouseButton(int32 button);
         static bool GetMouseButtonDown(int32 button);
