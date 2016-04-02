@@ -26,6 +26,9 @@ void main()
     float gap = 3.0;
     position += vec3(mod(gl_InstanceID, 10) * gap, 0.0, -trunc(gl_InstanceID / 10) * gap);
 
+	position.x += sin(time * 10.0 + position.y);
+	position.z += cos(time * 5.0 + position.y * 2.0);
+	
     gl_Position = projection * view * model * vec4(position, 1.0);
     
 }

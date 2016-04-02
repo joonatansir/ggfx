@@ -20,6 +20,7 @@
 #include "Texture.h"
 #include "Window.h"
 #include "GLFWWindow.h"
+#include "ShaderPipeline.h"
 
 using namespace ggfx;
 
@@ -61,26 +62,31 @@ int CALLBACK WinMain(
     texture2.bind(GL_TEXTURE1);
     texture.bind(GL_TEXTURE0);
 
-    uint32 cubemapVertexProgram = createShaderProgramFromFile(assetPaths[cubemap_vert_shader], GL_VERTEX_SHADER);
-    uint32 cubemapFragmentProgram = createShaderProgramFromFile(assetPaths[cubemap_frag_shader], GL_FRAGMENT_SHADER);
+    //uint32 cubemapVertexProgram = createShaderProgramFromFile(assetPaths[cubemap_vert_shader], GL_VERTEX_SHADER);
+    //uint32 cubemapFragmentProgram = createShaderProgramFromFile(assetPaths[cubemap_frag_shader], GL_FRAGMENT_SHADER);
 
-    uint32 vertexProgram = createShaderProgramFromFile(assetPaths[basic_vert], GL_VERTEX_SHADER);
-    uint32 fragmentProgram = createShaderProgramFromFile(assetPaths[basic_frag], GL_FRAGMENT_SHADER);
+    //uint32 vertexProgram = createShaderProgramFromFile(assetPaths[basic_vert], GL_VERTEX_SHADER);
+    //uint32 fragmentProgram = createShaderProgramFromFile(assetPaths[basic_frag], GL_FRAGMENT_SHADER);
 
-    uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
-    uint32 pipeline2 = createProgramPipeline(cubemapVertexProgram, cubemapFragmentProgram);
+    //uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
+    //uint32 pipeline2 = createProgramPipeline(cubemapVertexProgram, cubemapFragmentProgram);
+
+    Shader meshShaders[2] = {0};
+    Shader cubeShaders[2] = {0};
+    
+    cubeShaders[0] = ShaderPipeline::createProgramFromFile(assetPaths[cubemap_vert_shader], GL_VERTEX_SHADER);
+    cubeShaders[1] = ShaderPipeline::createProgramFromFile(assetPaths[cubemap_frag_shader], GL_FRAGMENT_SHADER);
+
+    meshShaders[0] = ShaderPipeline::createProgramFromFile(assetPaths[basic_vert], GL_VERTEX_SHADER);
+    meshShaders[1] = ShaderPipeline::createProgramFromFile(assetPaths[basic_frag], GL_FRAGMENT_SHADER);
+
+    ShaderPipeline pipeline = ShaderPipeline::createPipeline(meshShaders[0], meshShaders[1]);
+    ShaderPipeline pipeline2 = ShaderPipeline::createPipeline(cubeShaders[0], cubeShaders[1]);
     
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
     float32* dataBof = loadBOF(assetPaths[fox_bof], &indices, &vertexBufferSize, &indexBufferSize);
-
-    /*uint32* indices2;
-    uint32 vbs;
-    uint32 ibs;
-    uint32 uvs;
-    uint32 ns;
-    float32* dataBob = loadBinaryOBJ(assetPaths[icosphere_bof], &indices2, vbs, uvs, ns, ibs);*/
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
@@ -97,29 +103,22 @@ int CALLBACK WinMain(
     vertexBuffer.bind();
     indexBuffer.bind();
 
-    /*uint32 size = vbs / sizeof(float32);
-    for (uint32 i = 0; i < size; i+=8)
-    {
-        Log::print("%d:\n", i/8);
-        Log::print("vp: %f, %f, %f\n", dataBob[i], dataBob[i + 1], dataBob[i + 2]);
-        Log::print("vn: %f, %f, %f\n", dataBob[i + 3], dataBob[i + 4], dataBob[i + 5]);
-        Log::print("vt: %f, %f\n", dataBob[i + 6], dataBob[i + 7]);
-    }*/
-
     uint32 stride = 8 * sizeof(float32);
     vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
     vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float32));
     vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float32));
 
-    int32 timeLocation = glGetUniformLocation(fragmentProgram, "time");
-    int32 samplerLocation = glGetUniformLocation(fragmentProgram, "sampler");
-    int32 samplerLocation2 = glGetUniformLocation(fragmentProgram, "sampler2");
-    int32 cubemapLocation = glGetUniformLocation(cubemapFragmentProgram, "cubemap");
+    int32 timeLocation_vs = pipeline.vs.getUniformLocation("time");
+    int32 timeLocation = pipeline.fs.getUniformLocation("time");
+    int32 samplerLocation = pipeline.fs.getUniformLocation("sampler");
+    int32 samplerLocation2 = pipeline.fs.getUniformLocation("sampler2");
+    int32 cubemapLocation = pipeline2.fs.getUniformLocation("cubemap");
 
-    int32 modelTransformLocation = glGetUniformLocation(vertexProgram, "model");
-    int32 viewTransformLocation = glGetUniformLocation(vertexProgram, "view");
-    int32 projectionTransformLocation = glGetUniformLocation(vertexProgram, "projection");
-    int32 viewCubemap = glGetUniformLocation(cubemapVertexProgram, "view");
+    int32 modelTransformLocation = pipeline.vs.getUniformLocation("model");
+    int32 viewTransformLocation = pipeline.vs.getUniformLocation("view");
+    int32 projectionTransformLocation = pipeline.vs.getUniformLocation("projection");
+    int32 viewCubemap = pipeline2.vs.getUniformLocation("view");
+    int32 projectionLoc = pipeline2.vs.getUniformLocation("projection");
 
     glm::mat4 projection = glm::perspective(PI/4.0f, (float)1280 / 720, 0.1f, 1000.0f);
 
@@ -128,25 +127,24 @@ int CALLBACK WinMain(
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
 
-    char buffer[512];
-    int32 length;
-    glGetProgramInfoLog(vertexProgram, 512, &length, buffer);
+    //char buffer[512] = {};
+    //int32 length;
+    //glGetProgramInfoLog(vertexProgram, 512, &length, buffer);
 
-    char buffer2[512];
-    glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
+    //char buffer2[512];
+    //glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
 
-    char buffer3[512];
-    glGetProgramInfoLog(cubemapVertexProgram, 512, &length, buffer3);
+    //char buffer3[512];
+    //glGetProgramInfoLog(cubemapVertexProgram, 512, &length, buffer3);
 
-    char buffer4[512];
-    glGetProgramInfoLog(cubemapFragmentProgram, 512, &length, buffer4);
+    //char buffer4[512];
+    //glGetProgramInfoLog(cubemapFragmentProgram, 512, &length, buffer4);
 
-    Log::print(buffer);
-    Log::print(buffer2);
-    Log::print(buffer3);
-    Log::print(buffer4);
+    //Log::print(buffer);
+    //Log::print(buffer2);
+    //Log::print(buffer3);
+    //Log::print(buffer4);
     
-    glm::mat4 view;
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -5.0f);
     glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 1.0f);
     float32 cameraAngle = 0.0f;
@@ -160,7 +158,10 @@ int CALLBACK WinMain(
     float32 rotationAmount = 0.0f;
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
     
-    Log::print("HELLO %d, %d", 999, 123);
+    glm::quat rot;
+    //glm::vec3 right(1.0f, 0.0f, 0.0f);
+
+    glm::vec2 lastCursorPosition;
 
     while (!window->shouldClose())
     {
@@ -168,8 +169,6 @@ int CALLBACK WinMain(
         static float32 lastFrameTime = time;
         float32 dt = time - lastFrameTime;
         lastFrameTime = time;
-
-        app.update();
 
         //object
         glm::mat4 world;
@@ -179,7 +178,52 @@ int CALLBACK WinMain(
         world = glm::scale(world, scale);
         world = glm::rotate(world, rotationAmount, rotation);
         
-        cameraZ += Input::scrollOffset.y * 0.5f;
+        glm::mat4 view;
+        glm::vec3 right(1.0f, 0.0f, 0.0f);
+        glm::vec3 up(0.0f, 1.0f, 0.0f);
+        glm::vec3 forward(0.0f, 0.0f, -1.0f);
+        
+        int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_LEFT);
+        if (status == GLFW_PRESS)
+        {
+            glm::vec2 newCursorPosition(Input::mousePosition.x, Input::mousePosition.y);
+
+            glm::vec2 delta = (newCursorPosition - lastCursorPosition) * dt;
+            glm::quat xRot(cos(delta.x / 2.0f), sin(delta.x / 2.0f)*up);
+
+            right = xRot * right;
+
+            glm::quat yRot(cos(delta.y / 2.0f), sin(delta.y / 2.0f)*right);
+            
+            rot = rot * xRot;
+            rot = rot * yRot;
+
+            //glm::translate(view, glm::vec3(1.0f, 3.0f, 1.0f));
+        }
+
+        view = glm::mat4_cast(rot);
+
+        right = rot * right;
+        up = rot * up;
+        forward = rot * forward;
+
+        //Log::print("%f, %f, %f\n", forward.x, forward.y, forward.z);
+        
+        int32 w = glfwGetKey(window->handle->ptr, GLFW_KEY_W);
+        if (w == GLFW_PRESS)
+        {
+            cameraPos -= forward * dt * 5.0f;
+        }
+        else if (glfwGetKey(window->handle->ptr, GLFW_KEY_S))
+        {
+            cameraPos += forward * dt * 5.0f;
+        }
+
+        view = glm::translate(view, cameraPos);
+
+        lastCursorPosition = glm::vec2(Input::mousePosition.x, Input::mousePosition.y);
+
+        /*cameraZ += Input::scrollOffset.y * 0.5f;
         view = glm::lookAt(cameraPos, pos, glm::vec3(0.0f, 1.0f, 0.0f));
 
         int32 shiftStatus = glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT);
@@ -214,12 +258,13 @@ int CALLBACK WinMain(
         else if (status == GLFW_RELEASE)
         {
             isMiddleButtonHeld = false;
-        }
+        }*/
+
+        app.update();
 
         {
             ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
             ImGui::Begin("Debug");
-            ImGui::Text("Hello world!");
             ImGui::PushItemWidth(ImGui::GetWindowWidth()*0.2f);
             ImGui::SliderFloat("X", &cameraPos[0], -50.0f, 50.0f);
             ImGui::SameLine();
@@ -232,21 +277,23 @@ int CALLBACK WinMain(
             ImGui::Text("scrollX: %f, scrollY: %f", Input::scrollOffset.x, Input::scrollOffset.y);
             ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
 
-            ImGui::End();
-        }
+            if (ImGui::Button("Recompile shaders"))
+            {
+                pipeline.recompile();
 
-        {
-            ImGui::SetNextWindowPos(ImVec2(10, 500), ImGuiSetCond_Once);
-            ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_Once);
-            ImGui::Begin("Shader Log");
-            int32 maxUniformBufferSize;
-            int32 majorVersion;
-            glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
-            glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBufferSize);
-            ImGui::Text("Max uniform buffer size: %d bytes", maxUniformBufferSize);
-            ImGui::Text("Major version: %d", majorVersion);
-            ImGui::TextWrapped(buffer);
-            ImGui::TextWrapped(buffer2);
+                timeLocation_vs = pipeline.vs.getUniformLocation("time");
+                timeLocation = pipeline.fs.getUniformLocation("time");
+                samplerLocation = pipeline.fs.getUniformLocation("sampler");
+                samplerLocation2 = pipeline.fs.getUniformLocation("sampler2");
+                cubemapLocation = pipeline2.fs.getUniformLocation("cubemap");
+
+                modelTransformLocation = pipeline.vs.getUniformLocation("model");
+                viewTransformLocation = pipeline.vs.getUniformLocation("view");
+                projectionTransformLocation = pipeline.vs.getUniformLocation("projection");
+                viewCubemap = pipeline2.vs.getUniformLocation("view");
+                projectionLoc = pipeline2.vs.getUniformLocation("projection");
+            }
+
             ImGui::End();
         }
 
@@ -264,17 +311,19 @@ int CALLBACK WinMain(
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glProgramUniform1f(fragmentProgram, timeLocation, time);
-        glProgramUniform1i(fragmentProgram, samplerLocation, 0);
-        glProgramUniform1i(fragmentProgram, samplerLocation2, 1);
-        glProgramUniform1i(cubemapFragmentProgram, cubemapLocation, 2);
+        glProgramUniform1f(pipeline.vs.id, timeLocation_vs, time);
+        glProgramUniform1f(pipeline.fs.id, timeLocation, time);
+        glProgramUniform1i(pipeline.fs.id, samplerLocation, 0);
+        glProgramUniform1i(pipeline.fs.id, samplerLocation2, 1);
+        glProgramUniform1i(pipeline2.fs.id, cubemapLocation, 2);
 
-        glProgramUniformMatrix4fv(vertexProgram, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
-        glProgramUniformMatrix4fv(vertexProgram, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
-        glProgramUniformMatrix4fv(vertexProgram, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
-        glProgramUniformMatrix4fv(cubemapVertexProgram, viewCubemap, 1, GL_FALSE, &view[0][0]);
+        glProgramUniformMatrix4fv(pipeline.vs.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
+        glProgramUniformMatrix4fv(pipeline.vs.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
+        glProgramUniformMatrix4fv(pipeline.vs.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
+        glProgramUniformMatrix4fv(pipeline2.vs.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
+        glProgramUniformMatrix4fv(pipeline2.vs.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
 
-        glBindProgramPipeline(pipeline2);
+        glBindProgramPipeline(pipeline2.id);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -282,7 +331,7 @@ int CALLBACK WinMain(
         glDepthMask(GL_TRUE);
         glEnable(GL_CULL_FACE);
 
-        glBindProgramPipeline(pipeline);
+        glBindProgramPipeline(pipeline.id);
 
         glDrawElementsInstanced(
             GL_TRIANGLES, 

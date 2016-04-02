@@ -45,8 +45,8 @@ void App::init()
 
 void App::update()
 {
-    Input::update(window);
     ui.update(window);
+    Input::update(window);
 }
 
 void App::render()
