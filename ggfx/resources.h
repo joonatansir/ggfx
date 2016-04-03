@@ -37,6 +37,7 @@ enum ggfxAssets
     torus_bob,
     cube_uv_bob,
     icosphere_bof,
+    vivi_bof,
 };
 
 static const char* assetPaths[] =
@@ -74,4 +75,5 @@ static const char* assetPaths[] =
     "examples/00 Hello Triangle/assets/torus.bob",
     "examples/00 Hello Triangle/assets/cube_uv.bob",
     "examples/00 Hello Triangle/assets/icosphere.bof",
+    "examples/00 Hello Triangle/assets/vivi.bof",
 };

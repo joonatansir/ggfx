@@ -26,6 +26,31 @@ using namespace ggfx;
 
 static const float32 PI = 3.14159f;
 
+static glm::vec2 lerp(glm::vec2& a, glm::vec2& b, float t)
+{
+    return a + (b-a)*t;
+}
+
+static void fpsCamera(glm::quat& rotation, glm::vec3& pos, glm::vec2& delta, float movementSpeed, float dt, int32 key_w, int32 key_a, int32 key_s, int32 key_d, int32 key_q, int32 key_e)
+{
+    glm::vec3 right = rotation * glm::vec3(-1.0f, 0.0f, 0.0f);
+    glm::vec3 up(0.0f, -1.0f, 0.0f);
+
+    glm::quat xRot(cos(delta.x / 2.0f), sin(delta.x / 2.0f)*up);
+    glm::quat yRot(cos(delta.y / 2.0f), sin(delta.y / 2.0f)*right);
+
+    rotation = xRot * yRot * rotation;
+
+    glm::vec3 updown(0.0f, key_e - key_q, 0.0f);
+    glm::vec3 rightleft(rotation * glm::vec3(key_d - key_a, 0.0f, 0.0f));
+    glm::vec3 frontback(rotation * glm::vec3(0.0f, 0.0f, -(key_w - key_s)));
+
+    static glm::vec3 velocity;
+    velocity += (updown + rightleft + frontback) * movementSpeed;
+    pos += velocity * dt;
+    velocity *= 0.8f;
+}
+
 int CALLBACK WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
@@ -62,15 +87,6 @@ int CALLBACK WinMain(
     texture2.bind(GL_TEXTURE1);
     texture.bind(GL_TEXTURE0);
 
-    //uint32 cubemapVertexProgram = createShaderProgramFromFile(assetPaths[cubemap_vert_shader], GL_VERTEX_SHADER);
-    //uint32 cubemapFragmentProgram = createShaderProgramFromFile(assetPaths[cubemap_frag_shader], GL_FRAGMENT_SHADER);
-
-    //uint32 vertexProgram = createShaderProgramFromFile(assetPaths[basic_vert], GL_VERTEX_SHADER);
-    //uint32 fragmentProgram = createShaderProgramFromFile(assetPaths[basic_frag], GL_FRAGMENT_SHADER);
-
-    //uint32 pipeline = createProgramPipeline(vertexProgram, fragmentProgram);
-    //uint32 pipeline2 = createProgramPipeline(cubemapVertexProgram, cubemapFragmentProgram);
-
     Shader meshShaders[2] = {0};
     Shader cubeShaders[2] = {0};
     
@@ -86,7 +102,7 @@ int CALLBACK WinMain(
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
-    float32* dataBof = loadBOF(assetPaths[fox_bof], &indices, &vertexBufferSize, &indexBufferSize);
+    float32* dataBof = loadBOF(assetPaths[vivi_bof], &indices, &vertexBufferSize, &indexBufferSize);
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
@@ -113,6 +129,7 @@ int CALLBACK WinMain(
     int32 samplerLocation = pipeline.fs.getUniformLocation("sampler");
     int32 samplerLocation2 = pipeline.fs.getUniformLocation("sampler2");
     int32 cubemapLocation = pipeline2.fs.getUniformLocation("cubemap");
+    int32 cubemapSamplerLocation = pipeline.fs.getUniformLocation("cubemapSampler");
 
     int32 modelTransformLocation = pipeline.vs.getUniformLocation("model");
     int32 viewTransformLocation = pipeline.vs.getUniformLocation("view");
@@ -126,26 +143,8 @@ int CALLBACK WinMain(
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
-
-    //char buffer[512] = {};
-    //int32 length;
-    //glGetProgramInfoLog(vertexProgram, 512, &length, buffer);
-
-    //char buffer2[512];
-    //glGetProgramInfoLog(fragmentProgram, 512, &length, buffer2);
-
-    //char buffer3[512];
-    //glGetProgramInfoLog(cubemapVertexProgram, 512, &length, buffer3);
-
-    //char buffer4[512];
-    //glGetProgramInfoLog(cubemapFragmentProgram, 512, &length, buffer4);
-
-    //Log::print(buffer);
-    //Log::print(buffer2);
-    //Log::print(buffer3);
-    //Log::print(buffer4);
     
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -5.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
     glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 1.0f);
     float32 cameraAngle = 0.0f;
     float32 cameraAngleY = 0.0f;
@@ -158,7 +157,8 @@ int CALLBACK WinMain(
     float32 rotationAmount = 0.0f;
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
     
-    glm::quat rot;
+    float angle = -PI / 4.0f;
+    glm::quat rot(cos(angle/2.0f), sin(angle/2.0f)*glm::vec3(0.0f, 1.0f, 0.0f));
     //glm::vec3 right(1.0f, 0.0f, 0.0f);
 
     glm::vec2 lastCursorPosition;
@@ -178,87 +178,37 @@ int CALLBACK WinMain(
         world = glm::scale(world, scale);
         world = glm::rotate(world, rotationAmount, rotation);
         
-        glm::mat4 view;
-        glm::vec3 right(1.0f, 0.0f, 0.0f);
-        glm::vec3 up(0.0f, 1.0f, 0.0f);
-        glm::vec3 forward(0.0f, 0.0f, -1.0f);
-        
-        int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_LEFT);
+        int32 key_w = (glfwGetKey(window->handle->ptr, GLFW_KEY_W) == GLFW_PRESS);
+        int32 key_a = (glfwGetKey(window->handle->ptr, GLFW_KEY_A) == GLFW_PRESS);
+        int32 key_s = (glfwGetKey(window->handle->ptr, GLFW_KEY_S) == GLFW_PRESS);
+        int32 key_d = (glfwGetKey(window->handle->ptr, GLFW_KEY_D) == GLFW_PRESS);
+        int32 key_q = (glfwGetKey(window->handle->ptr, GLFW_KEY_Q) == GLFW_PRESS);
+        int32 key_e = (glfwGetKey(window->handle->ptr, GLFW_KEY_E) == GLFW_PRESS);
+
+        glm::vec2 delta(0);
+        int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_RIGHT);
         if (status == GLFW_PRESS)
         {
             glm::vec2 newCursorPosition(Input::mousePosition.x, Input::mousePosition.y);
-
-            glm::vec2 delta = (newCursorPosition - lastCursorPosition) * dt;
-            glm::quat xRot(cos(delta.x / 2.0f), sin(delta.x / 2.0f)*up);
-
-            right = xRot * right;
-
-            glm::quat yRot(cos(delta.y / 2.0f), sin(delta.y / 2.0f)*right);
-            
-            rot = rot * xRot;
-            rot = rot * yRot;
-
-            //glm::translate(view, glm::vec3(1.0f, 3.0f, 1.0f));
+            delta = (newCursorPosition - lastCursorPosition) * dt * 0.5f;
+            delta = lerp(lastCursorPosition, newCursorPosition, 0.1f * dt) - lastCursorPosition;
         }
 
-        view = glm::mat4_cast(rot);
+        float movementSpeed = dt * 400.0f;
 
-        right = rot * right;
-        up = rot * up;
-        forward = rot * forward;
-
-        //Log::print("%f, %f, %f\n", forward.x, forward.y, forward.z);
-        
-        int32 w = glfwGetKey(window->handle->ptr, GLFW_KEY_W);
-        if (w == GLFW_PRESS)
+        if ((glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))
         {
-            cameraPos -= forward * dt * 5.0f;
+            movementSpeed *= 0.1f;
         }
-        else if (glfwGetKey(window->handle->ptr, GLFW_KEY_S))
-        {
-            cameraPos += forward * dt * 5.0f;
-        }
-
-        view = glm::translate(view, cameraPos);
 
         lastCursorPosition = glm::vec2(Input::mousePosition.x, Input::mousePosition.y);
 
-        /*cameraZ += Input::scrollOffset.y * 0.5f;
-        view = glm::lookAt(cameraPos, pos, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        int32 shiftStatus = glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT);
-        int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_MIDDLE);
-        if (status == GLFW_PRESS || Input::scrollOffset.y != 0.0f)
-        {
-            double x, y;
-            glfwGetCursorPos(window->handle->ptr, &x, &y);
-
-            static glm::vec3 lastCursorPosition;
-            glm::vec3 newCursorPosition(x, y, 0);
-
-            if (!isMiddleButtonHeld)
-            {
-                lastCursorPosition = newCursorPosition;
-                isMiddleButtonHeld = true;
-            }
-
-            glm::vec3 offset = newCursorPosition - lastCursorPosition;
-
-            float32 dist = cameraZ;
-
-            cameraAngle += offset.x * dt;
-            cameraAngleY += offset.y * dt;
-
-            cameraPos.x = -sin(cameraAngle) * cos(cameraAngleY) * dist;
-            cameraPos.y = -sin(cameraAngleY) * dist;
-            cameraPos.z = cos(cameraAngle) * cos(cameraAngleY) * dist;
-
-            lastCursorPosition = newCursorPosition;
-        }
-        else if (status == GLFW_RELEASE)
-        {
-            isMiddleButtonHeld = false;
-        }*/
+        fpsCamera(rot, cameraPos, delta, movementSpeed, dt, key_w, key_a, key_s, key_d, key_q, key_e);
+        
+        glm::mat4 view;
+        view = glm::translate(view, cameraPos);
+        view = view * glm::mat4_cast(rot);
+        view = glm::inverse(view);
 
         app.update();
 
@@ -286,6 +236,7 @@ int CALLBACK WinMain(
                 samplerLocation = pipeline.fs.getUniformLocation("sampler");
                 samplerLocation2 = pipeline.fs.getUniformLocation("sampler2");
                 cubemapLocation = pipeline2.fs.getUniformLocation("cubemap");
+                cubemapSamplerLocation = pipeline.fs.getUniformLocation("cubemapSampler");
 
                 modelTransformLocation = pipeline.vs.getUniformLocation("model");
                 viewTransformLocation = pipeline.vs.getUniformLocation("view");
@@ -315,6 +266,7 @@ int CALLBACK WinMain(
         glProgramUniform1f(pipeline.fs.id, timeLocation, time);
         glProgramUniform1i(pipeline.fs.id, samplerLocation, 0);
         glProgramUniform1i(pipeline.fs.id, samplerLocation2, 1);
+        glProgramUniform1i(pipeline.fs.id, cubemapSamplerLocation, 2);
         glProgramUniform1i(pipeline2.fs.id, cubemapLocation, 2);
 
         glProgramUniformMatrix4fv(pipeline.vs.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
@@ -338,7 +290,7 @@ int CALLBACK WinMain(
             (GLsizei)(indexBufferSize / sizeof(uint32)),
             GL_UNSIGNED_INT,
             0, 
-            1);
+            100);
 
         //glBindProgramPipeline(0);
         
