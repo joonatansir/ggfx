@@ -10,7 +10,7 @@ namespace ggfx
         uint32 type;
         const char* filename; //Store filename for recompiling
 
-        int32 getUniformLocation(const char* name)
+        inline int32 getUniformLocation(const char* name)
         {
             return glGetUniformLocation(id, name);
         }
@@ -27,7 +27,7 @@ namespace ggfx
         void recompileShader(Shader& shader, uint32 stages);
 
         static Shader createProgramFromFile(const char* filename, uint32 type);
-        static ShaderPipeline createPipeline(Shader vertexShader, Shader fragmentShader);
+        static ShaderPipeline createPipeline(const Shader& vertexShader, const Shader& fragmentShader);
 
         uint32 id;
         Shader vs;

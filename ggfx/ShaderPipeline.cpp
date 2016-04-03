@@ -53,7 +53,7 @@ Shader ShaderPipeline::createProgramFromFile(const char* filename, uint32 type)
     return shader;
 }
 
-ShaderPipeline ShaderPipeline::createPipeline(Shader vertexShader, Shader fragmentShader)
+ShaderPipeline ShaderPipeline::createPipeline(const Shader& vertexShader, const Shader& fragmentShader)
 {
     ShaderPipeline pipeline(vertexShader, fragmentShader);
 
