@@ -38,6 +38,12 @@ enum ggfxAssets
     cube_uv_bob,
     icosphere_bof,
     vivi_bof,
+    saint_posx,
+    saint_negx,
+    saint_posy,
+    saint_negy,
+    saint_posz,
+    saint_negz,
 };
 
 static const char* assetPaths[] =
@@ -76,4 +82,10 @@ static const char* assetPaths[] =
     "examples/00 Hello Triangle/assets/cube_uv.bob",
     "examples/00 Hello Triangle/assets/icosphere.bof",
     "examples/00 Hello Triangle/assets/vivi.bof",
+    "examples/00 Hello Triangle/assets/saintpeterbasilisca/posx.jpg",
+    "examples/00 Hello Triangle/assets/saintpeterbasilisca/negx.jpg",
+    "examples/00 Hello Triangle/assets/saintpeterbasilisca/posy.jpg",
+    "examples/00 Hello Triangle/assets/saintpeterbasilisca/negy.jpg",
+    "examples/00 Hello Triangle/assets/saintpeterbasilisca/posz.jpg",
+    "examples/00 Hello Triangle/assets/saintpeterbasilisca/negz.jpg",
 };

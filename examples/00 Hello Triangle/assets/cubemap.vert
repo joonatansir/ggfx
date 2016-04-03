@@ -19,8 +19,8 @@ void main()
         vec3(-1.0, 1.0, 1.0),
         vec3(1.0, 1.0, 1.0)
     );
-
-    coords = mat3(view) * vertices[gl_VertexID];
+	
+    coords = transpose(mat3(view)) * (inverse(projection) * vec4(vertices[gl_VertexID], 1.0)).xyz;
 
     gl_Position = vec4(vertices[gl_VertexID], 1.0);
 }

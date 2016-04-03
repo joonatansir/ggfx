@@ -33,11 +33,11 @@ static glm::vec2 lerp(glm::vec2& a, glm::vec2& b, float t)
 
 static void fpsCamera(glm::quat& rotation, glm::vec3& pos, glm::vec2& delta, float movementSpeed, float dt, int32 key_w, int32 key_a, int32 key_s, int32 key_d, int32 key_q, int32 key_e)
 {
-    glm::vec3 right = rotation * glm::vec3(-1.0f, 0.0f, 0.0f);
-    glm::vec3 up(0.0f, -1.0f, 0.0f);
+    glm::vec3 right = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 up(0.0f, 1.0f, 0.0f);
 
-    glm::quat xRot(cos(delta.x / 2.0f), sin(delta.x / 2.0f)*up);
-    glm::quat yRot(cos(delta.y / 2.0f), sin(delta.y / 2.0f)*right);
+    glm::quat xRot(cos(-delta.x / 2.0f), sin(-delta.x / 2.0f)*up);
+    glm::quat yRot(cos(-delta.y / 2.0f), sin(-delta.y / 2.0f)*right);
 
     rotation = xRot * yRot * rotation;
 
@@ -79,8 +79,16 @@ int CALLBACK WinMain(
         assetPaths[cubemap_negz],
     };
 
-    Texture cubemap = Texture::createCubeFromFile(filenames);
+    Texture cubemap = Texture::createCubeFromFile(filenames, GL_RGBA, false);
     cubemap.bind(GL_TEXTURE2);
+
+    /*Texture saint_cubemap = Texture::createCubeFromFile(assetPaths[saint_posx], 
+                                                        assetPaths[saint_negx], 
+                                                        assetPaths[saint_posy], 
+                                                        assetPaths[saint_negy], 
+                                                        assetPaths[saint_posz], 
+                                                        assetPaths[saint_negz], GL_RGBA, false);
+    saint_cubemap.bind(GL_TEXTURE2);*/
 
     Texture texture = Texture::create2DFromFile(assetPaths[checker_1]);
     Texture texture2 = Texture::create2DFromFile(assetPaths[checker_2]);
@@ -102,7 +110,7 @@ int CALLBACK WinMain(
     uint32* indices;
     uint32 vertexBufferSize;
     uint32 indexBufferSize;
-    float32* dataBof = loadBOF(assetPaths[vivi_bof], &indices, &vertexBufferSize, &indexBufferSize);
+    float32* dataBof = loadBOF(assetPaths[sphere_bof], &indices, &vertexBufferSize, &indexBufferSize);
 
     GPUBuffer vertexBuffer = GPUBuffer::create(
         GL_ARRAY_BUFFER,
@@ -137,29 +145,22 @@ int CALLBACK WinMain(
     int32 viewCubemap = pipeline2.vs.getUniformLocation("view");
     int32 projectionLoc = pipeline2.vs.getUniformLocation("projection");
 
-    glm::mat4 projection = glm::perspective(PI/4.0f, (float)1280 / 720, 0.1f, 1000.0f);
-
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
     
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
-    glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 1.0f);
-    float32 cameraAngle = 0.0f;
-    float32 cameraAngleY = 0.0f;
-    float32 cameraZ = -5.f;
-
-    bool isMiddleButtonHeld = false;
-
     //Object
     float32 scaleAmount = 1.0f;
     float32 rotationAmount = 0.0f;
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
     
-    float angle = -PI / 4.0f;
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
+    float angle = 0.0f;
     glm::quat rot(cos(angle/2.0f), sin(angle/2.0f)*glm::vec3(0.0f, 1.0f, 0.0f));
     //glm::vec3 right(1.0f, 0.0f, 0.0f);
+
+    glm::mat4 projection = glm::perspective(PI/4.0f, (float)1280 / 720, 0.1f, 1000.0f);
 
     glm::vec2 lastCursorPosition;
 
@@ -190,7 +191,6 @@ int CALLBACK WinMain(
         if (status == GLFW_PRESS)
         {
             glm::vec2 newCursorPosition(Input::mousePosition.x, Input::mousePosition.y);
-            delta = (newCursorPosition - lastCursorPosition) * dt * 0.5f;
             delta = lerp(lastCursorPosition, newCursorPosition, 0.1f * dt) - lastCursorPosition;
         }
 
@@ -230,6 +230,7 @@ int CALLBACK WinMain(
             if (ImGui::Button("Recompile shaders"))
             {
                 pipeline.recompile();
+                pipeline2.recompile();
 
                 timeLocation_vs = pipeline.vs.getUniformLocation("time");
                 timeLocation = pipeline.fs.getUniformLocation("time");
@@ -269,13 +270,17 @@ int CALLBACK WinMain(
         glProgramUniform1i(pipeline.fs.id, cubemapSamplerLocation, 2);
         glProgramUniform1i(pipeline2.fs.id, cubemapLocation, 2);
 
+        glProgramUniformMatrix4fv(pipeline2.vs.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
+        glProgramUniformMatrix4fv(pipeline2.vs.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
+        
         glProgramUniformMatrix4fv(pipeline.vs.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
         glProgramUniformMatrix4fv(pipeline.vs.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
         glProgramUniformMatrix4fv(pipeline.vs.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
-        glProgramUniformMatrix4fv(pipeline2.vs.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
-        glProgramUniformMatrix4fv(pipeline2.vs.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
 
         glBindProgramPipeline(pipeline2.id);
+
+        pipeline2.useProgramStage(pipeline2.vs.id, GL_VERTEX_SHADER_BIT);
+        pipeline2.useProgramStage(pipeline2.fs.id, GL_FRAGMENT_SHADER_BIT);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
