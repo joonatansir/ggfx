@@ -29,7 +29,7 @@ namespace ggfx
         uint32 indices[3];
     };
 
-    static uint32 hashFunction(const MeshIndex& m)
+    static size_t hashFunction(const MeshIndex& m)
     {
         return std::hash<uint32>()(m.indices[0]) ^ 
                std::hash<uint32>()(m.indices[1]) ^
@@ -90,7 +90,7 @@ namespace ggfx
 
     //Read binary .obj file. Data is returned in the following format:
     //pos.x, pos.y, pos.z, normal.x, normal.y, normal.z, uv.x, uv.y
-    float* loadBinaryOBJ(
+    /*float* loadBinaryOBJ(
         const char* filename, 
         uint32** indices, 
         uint32& vpSizeInBytesOut, 
@@ -139,15 +139,15 @@ namespace ggfx
 
             std::unordered_map<
                 MeshIndex, 
-                uint32, 
-                std::function<uint32(const MeshIndex&)>,
+                int32, 
+                std::function<int32(const MeshIndex&)>,
                 std::function<bool(const MeshIndex&, const MeshIndex&)>> uniqueIndices(1000, hashFunction, equalFunction);
 
             for (uint32 i = 0, k = 0; i < indicesCount; i+=3, k++)
             {
                 MeshIndex m = { { faceElements[i], faceElements[i + 1], faceElements[i + 2] } };
 
-                uint32 count = uniqueIndices.count(m);
+                size_t count = uniqueIndices.count(m);
 
                 if (count > 0)
                 {
@@ -186,7 +186,7 @@ namespace ggfx
         assert(result);
 
         return result;
-    }
+    }*/
 
     float* loadBOF(const char* filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize)
     {
