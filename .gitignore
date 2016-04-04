@@ -29,7 +29,6 @@
 
 # Xcode stuff
 DerivedData/
-build/
 *.xcodeproj
 
 # Visual studio
