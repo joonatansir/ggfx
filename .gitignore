@@ -40,10 +40,9 @@ Debug/
 Release/
 *.pdb
 *.sdf
-*.sln
 *.opendb
-*.vcxproj*
 *.db
+*.vcxproj.user
 
 # Renderdoc
 *.cap
