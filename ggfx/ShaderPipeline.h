@@ -20,18 +20,20 @@ namespace ggfx
     {
     public:
 
+        ShaderPipeline();
         ~ShaderPipeline();
 
         void useProgramStage(uint32 shaderID, uint32 stages);
         void recompile();
         void recompileShader(Shader& shader, uint32 stages);
 
-        static Shader createProgramFromFile(const char* filename, uint32 type);
+        static Shader createShaderProgram(const char* filename, uint32 type);
+        static ShaderPipeline createPipeline(const char* vertexShader, const char* fragmentShader);
         static ShaderPipeline createPipeline(const Shader& vertexShader, const Shader& fragmentShader);
 
         uint32 id;
-        Shader vs;
-        Shader fs;
+        Shader vertexShader;
+        Shader fragmentShader;
 
     private:
 

@@ -37,6 +37,7 @@ x64/
 ipch/
 .vs/
 Debug/
+Release/
 *.pdb
 *.sdf
 *.sln

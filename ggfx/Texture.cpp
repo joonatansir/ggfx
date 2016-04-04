@@ -10,6 +10,10 @@ Texture::Texture(uint32 type):
 {
 }
 
+Texture::Texture()
+{
+}
+
 Texture::~Texture()
 {
 }
@@ -34,7 +38,7 @@ Texture Texture::create2DFromFile(const char* filename, uint32 format, bool flip
     return texture;
 }
 
-Texture Texture::createCubeFromFile(const char* filenames[6], uint32 format, bool flipY)
+Texture Texture::createCubemapFromFile(const char* filenames[6], uint32 format, bool flipY)
 {
     Texture texture(GL_TEXTURE_CUBE_MAP);
 
@@ -55,7 +59,7 @@ Texture Texture::createCubeFromFile(const char* filenames[6], uint32 format, boo
     return texture;
 }
 
-Texture ggfx::Texture::createCubeFromFile(const char * posx, const char * negx, const char * posy, const char * negy, const char * posz, const char * negz, uint32 format, bool flipY)
+Texture ggfx::Texture::createCubemapFromFile(const char * posx, const char * negx, const char * posy, const char * negy, const char * posz, const char * negz, uint32 format, bool flipY)
 {
     const char* filenames[] =
     {
@@ -64,7 +68,7 @@ Texture ggfx::Texture::createCubeFromFile(const char * posx, const char * negx, 
         posz, negz,
     };
 
-    return createCubeFromFile(filenames, format, flipY);
+    return createCubemapFromFile(filenames, format, flipY);
 }
 
 void Texture::create2D(uint8* data, uint32 x, uint32 y, uint32 format)

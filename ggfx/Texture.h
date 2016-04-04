@@ -10,13 +10,14 @@ namespace ggfx
     {
     public:
 
+        Texture();
         ~Texture();
 
         void bind(uint32 activeUnit);
 
         static Texture create2DFromFile(const char* filename, uint32 format = GL_RGBA, bool flipY = true);
-        static Texture createCubeFromFile(const char* filenames[6], uint32 format = GL_RGBA, bool flipY = true);
-        static Texture createCubeFromFile(const char* posx, const char* negx, const char* posy, const char* negy, const char* posz, const char* negz, uint32 format = GL_RGBA, bool flipY = true);
+        static Texture createCubemapFromFile(const char* filenames[6], uint32 format = GL_RGBA, bool flipY = true);
+        static Texture createCubemapFromFile(const char* posx, const char* negx, const char* posy, const char* negy, const char* posz, const char* negz, uint32 format = GL_RGBA, bool flipY = true);
 
         uint32 type;
         uint32 id;

@@ -4,7 +4,6 @@
 #include <GLFW/glfw3.h>
 
 #include "types.h"
-#include "DebugUI.h"
 #include "Window.h"
 
 namespace ggfx
@@ -13,16 +12,22 @@ namespace ggfx
     {
     public:
 
-        App(Window* window);
-        ~App();
+        App();
+        App(uint32 width, uint32 height, const char* title);
+        virtual ~App();
 
-        void init();
-        void update();
-        void render();
+        virtual void update(float dt);
+        virtual void init();
+        void run();
 
-    private:
+        double getTime();
+
+    protected:
 
         Window* window;
-        DebugUI ui;
+    
+    private:
+
+        void render();
     };
 }

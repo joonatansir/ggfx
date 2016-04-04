@@ -90,7 +90,7 @@ namespace ggfx
 
     //Read binary .obj file. Data is returned in the following format:
     //pos.x, pos.y, pos.z, normal.x, normal.y, normal.z, uv.x, uv.y
-    float32* loadBinaryOBJ(
+    float* loadBinaryOBJ(
         const char* filename, 
         uint32** indices, 
         uint32& vpSizeInBytesOut, 
@@ -98,7 +98,7 @@ namespace ggfx
         uint32& vnSizeInBytesOut,
         uint32& fSizeinBytesOut)
     {
-        float32* result = 0;
+        float* result = 0;
 
         FILE* file = fopen(filename, "rb");
         if (file)
@@ -115,14 +115,14 @@ namespace ggfx
             
             const uint32 attributeCount = 3;
 
-            uint32 vpSize = vpSizeInBytes / sizeof(float32);
-            uint32 vtSize = vtSizeInBytes / sizeof(float32);
-            uint32 vnSize = vnSizeInBytes / sizeof(float32);
+            uint32 vpSize = vpSizeInBytes / sizeof(float);
+            uint32 vtSize = vtSizeInBytes / sizeof(float);
+            uint32 vnSize = vnSizeInBytes / sizeof(float);
             uint32 fSize = fSizeInBytes / sizeof(uint32);
 
-            float32* positions = new float32[vpSize];
-            float32* uvs = new float32[vtSize];
-            float32* normals = new float32[vnSize];
+            float* positions = new float[vpSize];
+            float* uvs = new float[vtSize];
+            float* normals = new float[vnSize];
             uint32* faceElements = new uint32[fSize];
 
             fread(positions, vpSizeInBytes, 1, file);
@@ -132,7 +132,7 @@ namespace ggfx
 
             uint32 stride = 8;
             *indices = new uint32[fSize / attributeCount];
-            result = new float32[fSize / attributeCount * stride];
+            result = new float[fSize / attributeCount * stride];
             
             uint32 indicesCount = fSizeInBytes / sizeof(uint32);
             uint32 indicesIndex = 0;
@@ -173,7 +173,7 @@ namespace ggfx
                 }
             }
 
-            vpSizeInBytesOut = indicesIndex * stride * sizeof(float32);
+            vpSizeInBytesOut = indicesIndex * stride * sizeof(float);
             vtSizeInBytesOut = vtSizeInBytes;
             vnSizeInBytesOut = vnSizeInBytes;
             fSizeinBytesOut = fSizeInBytes / attributeCount;
@@ -188,9 +188,9 @@ namespace ggfx
         return result;
     }
 
-    float32* loadBOF(const char* filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize)
+    float* loadBOF(const char* filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize)
     {
-        float32* result = 0;
+        float* result = 0;
 
         FILE* file = fopen(filename, "rb");
         if (file)
@@ -198,7 +198,7 @@ namespace ggfx
             fread(vertexBufferSize, sizeof(uint32), 1, file);
             fread(indexBufferSize, sizeof(uint32), 1, file);
 
-            result = new float32[*vertexBufferSize];
+            result = new float[*vertexBufferSize];
             *indices = new uint32[*indexBufferSize];
 
             fread(result, *vertexBufferSize, 1, file);

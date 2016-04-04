@@ -7,8 +7,12 @@
 using namespace ggfx;
 
 ShaderPipeline::ShaderPipeline(Shader vertex, Shader fragment) :
-    vs(vertex),
-    fs(fragment)
+    vertexShader(vertex),
+    fragmentShader(fragment)
+{
+}
+
+ShaderPipeline::ShaderPipeline()
 {
 }
 
@@ -23,19 +27,19 @@ void ShaderPipeline::useProgramStage(uint32 shaderID, uint32 stages)
 
 void ShaderPipeline::recompile()
 {
-    recompileShader(vs, GL_VERTEX_SHADER_BIT);
-    recompileShader(fs, GL_FRAGMENT_SHADER_BIT);
-    Log::print("Pipeline %u recompiled!\n", id);
+    recompileShader(vertexShader, GL_VERTEX_SHADER_BIT);
+    recompileShader(fragmentShader, GL_FRAGMENT_SHADER_BIT);
+    Log::info("Pipeline %u recompiled!\n", id);
 }
 
 void ShaderPipeline::recompileShader(Shader& shader, uint32 stages)
 {
     glDeleteProgram(shader.id);
-    shader = createProgramFromFile(shader.filename, shader.type);
+    shader = createShaderProgram(shader.filename, shader.type);
     useProgramStage(shader.id, stages);
 }
 
-Shader ShaderPipeline::createProgramFromFile(const char* filename, uint32 type)
+Shader ShaderPipeline::createShaderProgram(const char* filename, uint32 type)
 {
     Shader shader = { 0, type, filename };
     const uint8* source = loadFile(filename);
@@ -48,21 +52,29 @@ Shader ShaderPipeline::createProgramFromFile(const char* filename, uint32 type)
     glGetProgramInfoLog(shader.id, 512, &length, buffer);
 
     if(length > 0)
-        Log::print(buffer);
+        Log::error(buffer);
 
     return shader;
 }
 
-ShaderPipeline ShaderPipeline::createPipeline(const Shader& vertexShader, const Shader& fragmentShader)
+ShaderPipeline ShaderPipeline::createPipeline(const char* vertexSource, const char* fragmentSource)
+{
+    Shader vertexShader = createShaderProgram(vertexSource, GL_VERTEX_SHADER);
+    Shader fragmentShader = createShaderProgram(fragmentSource, GL_FRAGMENT_SHADER);
+
+    return createPipeline(vertexShader, fragmentShader);
+}
+
+ShaderPipeline ShaderPipeline::createPipeline(const Shader & vertexShader, const Shader & fragmentShader)
 {
     ShaderPipeline pipeline(vertexShader, fragmentShader);
 
     glGenProgramPipelines(1, &pipeline.id);
     glBindProgramPipeline(pipeline.id);
 
-    pipeline.useProgramStage(pipeline.vs.id, GL_VERTEX_SHADER_BIT);
-    pipeline.useProgramStage(pipeline.fs.id, GL_FRAGMENT_SHADER_BIT);
-    
+    pipeline.useProgramStage(pipeline.vertexShader.id, GL_VERTEX_SHADER_BIT);
+    pipeline.useProgramStage(pipeline.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
+
     glBindProgramPipeline(0);
 
     return pipeline;

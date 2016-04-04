@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include <GLFW/glfw3.h>
+#include <glm/vec2.hpp>
 
 #include "Window.h"
 #include "GLFWWindow.h"
@@ -31,7 +32,7 @@ Window::~Window()
     glfwTerminate();
 }
 
-bool Window::shouldClose()
+int32 Window::shouldClose()
 {
     return glfwWindowShouldClose(handle->ptr);
 }
@@ -44,4 +45,11 @@ void Window::pollEvents()
 void Window::swapBuffers()
 {
     glfwSwapBuffers(handle->ptr);
+}
+
+glm::ivec2 Window::getSize()
+{
+    int32 w, h;
+    glfwGetFramebufferSize(handle->ptr, &w, &h);
+    return glm::ivec2(w, h);
 }

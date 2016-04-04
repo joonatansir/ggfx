@@ -19,7 +19,8 @@ namespace ggfx
     public:
 
         static void Init(Window* window);
-        static void update(Window* window);
+        static void frameStart(Window* window);
+        static void frameEnd(Window* window);
 
         static bool GetMouseButton(int32 button);
         static bool GetMouseButtonDown(int32 button);

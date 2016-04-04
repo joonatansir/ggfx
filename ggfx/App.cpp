@@ -17,41 +17,70 @@ static void APIENTRY printCallback(
     const void* userParam) 
 { 
     //Log::print("OpenGL message: source 0x%04X, type 0x%04X, " "id %u, severity 0x%0X, ’%s’", source, type, id, severity, message); 
-    Log::print("OPENGL ERROR id %d: ", id);
-    Log::print(message);
-    Log::print("\n");
+    Log::error("OPENGL ERROR id %d: ", id);
+    Log::error(message);
+    Log::error("\n");
 }
 
-App::App(Window* window) :
-    window(window),
-    ui(window)
+App::App(uint32 width, uint32 height, const char* title) :
+    window(new Window(width, height, title))
+{
+    init();
+}
+
+App::App() :
+    window(new Window(640, 480, "ggfx"))
 {
     init();
 }
 
 App::~App()
 {
+    delete window;
 }
 
 void App::init()
 {
     int32 failure = gl3wInit();
     assert(!failure);
-
     glDebugMessageCallback(&printCallback, 0);
-
     Input::Init(window);
+
+    glm::ivec2 size = window->getSize();
+    glViewport(0, 0, size.x, size.y);
 }
 
-void App::update()
+void App::update(float dt)
 {
-    ui.update(window);
-    Input::update(window);
+    Input::frameStart(window);
 }
 
 void App::render()
 {
-    ui.render(ImGui::GetDrawData());
     window->swapBuffers();
     window->pollEvents();
+}
+
+void App::run()
+{
+    this->init();
+
+    while (!window->shouldClose())
+    {
+        //TODO: fix my timestep
+        float time = (float)glfwGetTime();
+        static float lastFrameTime = time;
+        float dt = time - lastFrameTime;
+        lastFrameTime = time;
+
+        App::update(dt);
+        this->update(dt);
+        Input::frameEnd(window);
+        App::render();
+    }
+}
+
+double App::getTime()
+{
+    return glfwGetTime();
 }

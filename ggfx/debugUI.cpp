@@ -94,7 +94,7 @@ void DebugUI::update(Window* window)
         io.MouseDown[i] = glfwGetMouseButton(window->handle->ptr, i) != 0;    // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
     }
 
-    io.MouseWheel = (float32)Input::scrollOffset.y;
+    io.MouseWheel = (float)Input::scrollOffset.y;
 
     ImGui::NewFrame();
 
