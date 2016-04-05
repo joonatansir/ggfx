@@ -16,8 +16,8 @@ namespace ggfx
         App(uint32 width, uint32 height, const char* title);
         virtual ~App();
 
-        virtual void update(float dt);
-        virtual void init();
+        virtual void update(float dt) = 0;
+        virtual void init() = 0;
         void run();
 
         double getTime();
@@ -25,9 +25,5 @@ namespace ggfx
     protected:
 
         Window* window;
-    
-    private:
-
-        void render();
     };
 }

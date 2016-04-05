@@ -24,22 +24,6 @@ static void APIENTRY printCallback(
 App::App(uint32 width, uint32 height, const char* title) :
     window(new Window(width, height, title))
 {
-    init();
-}
-
-App::App() :
-    window(new Window(640, 480, "ggfx"))
-{
-    init();
-}
-
-App::~App()
-{
-    delete window;
-}
-
-void App::init()
-{
     int32 failure = gl3wInit();
     assert(!failure);
     glDebugMessageCallback(&printCallback, 0);
@@ -49,15 +33,14 @@ void App::init()
     glViewport(0, 0, size.x, size.y);
 }
 
-void App::update(float dt)
+App::App() :
+    App(640, 480, "ggfx")
 {
-    Input::frameStart(window);
 }
 
-void App::render()
+App::~App()
 {
-    window->swapBuffers();
-    window->pollEvents();
+    delete window;
 }
 
 void App::run()
@@ -72,10 +55,12 @@ void App::run()
         float dt = time - lastFrameTime;
         lastFrameTime = time;
 
-        App::update(dt);
+        Input::frameStart(window);
         this->update(dt);
         Input::frameEnd(window);
-        App::render();
+        
+        window->swapBuffers();
+        window->pollEvents();
     }
 }
 

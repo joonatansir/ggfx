@@ -4,8 +4,6 @@
 
 using namespace ggfx;
 
-Log* Log::instance = nullptr;
-
 Log::Log()
 {
 }
@@ -100,7 +98,6 @@ void Log::draw()
 
 Log* Log::getInstance()
 {
-    if (instance == nullptr)
-        instance = new Log();
+    static Log* instance = new Log();
     return instance;
 }

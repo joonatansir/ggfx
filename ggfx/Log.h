@@ -22,7 +22,6 @@ namespace ggfx
         static Log* getInstance();
         void drawButton(uint32& selectedBuffer, uint32 bufferId, const char* title);
 
-        static Log* instance;
         ImGuiTextBuffer buffers[3]; //0: info buffer, 1: warning buffer, 2: error buffer
         bool scrollToBottom;
     };
