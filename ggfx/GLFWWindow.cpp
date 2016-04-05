@@ -12,7 +12,8 @@ Window::Window(uint32 width, uint32 height, const char * title)
 {
     handle = new WindowHandle();
 
-    assert(glfwInit());
+    int32 success = glfwInit();
+    assert(success);
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -21,7 +22,8 @@ Window::Window(uint32 width, uint32 height, const char * title)
 
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
-    assert(handle->ptr = glfwCreateWindow(width, height, title, NULL, NULL));
+    handle->ptr = glfwCreateWindow(width, height, title, NULL, NULL);
+    assert(handle->ptr);
 
     glfwMakeContextCurrent(handle->ptr);
     glfwSwapInterval(1);
