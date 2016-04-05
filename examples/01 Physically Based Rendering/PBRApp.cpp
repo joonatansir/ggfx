@@ -246,7 +246,7 @@ void PBRApp::init()
         Assets::getPath("sky/sky_back.bmp"),
     };
 
-    Texture cubemap = Texture::createCubemapFromFile(filenames, GL_RGBA, false);
+    Texture cubemap = Texture::createCubemapFromFile(filenames, { GL_RGBA, false });
     cubemap.bind(GL_TEXTURE2);
 
     Texture texture = Texture::create2DFromFile(Assets::getPath("checker2.png"));

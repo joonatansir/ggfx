@@ -4,6 +4,8 @@
 
 using namespace ggfx;
 
+const Texture::TextureFormat Texture::DEFAULT_TEXTURE_FORMAT = { GL_RGBA, true };
+
 Texture::Texture(uint32 type):
     type(type),
     id(0)
@@ -24,21 +26,21 @@ void Texture::bind(uint32 activeUnit)
     glBindTexture(type, id);
 }
 
-Texture Texture::create2DFromFile(const char* filename, uint32 format, bool flipY)
+Texture Texture::create2DFromFile(const char * filename, TextureFormat format)
 {
     Texture texture(GL_TEXTURE_2D);
 
     int32 x, y, n;
-    uint8* imageData = loadImage(filename, &x, &y, &n, flipY);
+    uint8* imageData = loadImage(filename, &x, &y, &n, format.flipY);
 
-    texture.create2D(imageData, x, y, format);
+    texture.create2D(imageData, x, y, format.internalFormat);
 
     freeImageData(imageData);
 
     return texture;
 }
 
-Texture Texture::createCubemapFromFile(const char* filenames[6], uint32 format, bool flipY)
+Texture Texture::createCubemapFromFile(const char* filenames[6], TextureFormat format)
 {
     Texture texture(GL_TEXTURE_CUBE_MAP);
 
@@ -46,10 +48,10 @@ Texture Texture::createCubemapFromFile(const char* filenames[6], uint32 format, 
     uint8* data[6];
     for (uint32 i = 0; i < 6; i++)
     {
-        data[i] = loadImage(filenames[i], &x, &y, &n, flipY);
+        data[i] = loadImage(filenames[i], &x, &y, &n, format.flipY);
     }
 
-    texture.createCube(data, x, y, format);
+    texture.createCube(data, x, y, format.internalFormat);
 
     for (uint32 i = 0; i < 6; i++)
     {
@@ -59,7 +61,7 @@ Texture Texture::createCubemapFromFile(const char* filenames[6], uint32 format, 
     return texture;
 }
 
-Texture ggfx::Texture::createCubemapFromFile(const char * posx, const char * negx, const char * posy, const char * negy, const char * posz, const char * negz, uint32 format, bool flipY)
+Texture ggfx::Texture::createCubemapFromFile(const char * posx, const char * negx, const char * posy, const char * negy, const char * posz, const char * negz, TextureFormat format)
 {
     const char* filenames[] =
     {
@@ -68,7 +70,7 @@ Texture ggfx::Texture::createCubemapFromFile(const char * posx, const char * neg
         posz, negz,
     };
 
-    return createCubemapFromFile(filenames, format, flipY);
+    return createCubemapFromFile(filenames, format);
 }
 
 void Texture::create2D(uint8* data, uint32 x, uint32 y, uint32 format)
