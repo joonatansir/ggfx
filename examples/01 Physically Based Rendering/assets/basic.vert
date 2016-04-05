@@ -23,12 +23,15 @@ void main()
     position = inPosition;
     
     //position.z -= gl_InstanceIDasd;
-    float gap = 5.0;
-    position += vec3(mod(gl_InstanceID, 10) * gap, 0.0, -trunc(gl_InstanceID / 10) * gap);
+    float gap = 4.0;
+	float posX = mod(gl_InstanceID, 10) * gap;
+	float posZ = -trunc(gl_InstanceID / 10) * gap;
+	//float posY = sin(time*2.5+posX/5.0)*4.0 * sin(time*10.0+posZ/10.0)*2.0;
+    position += vec3(posX, 0.0, posZ);
 
 	//position.x += sin(time * 10.0 + position.y);
 	//position.z += cos(time * 5.0 + position.y * 2.0);
 	
-    gl_Position = projection * view * model * vec4(position, 1.0);
+    gl_Position = projection * view * model * vec4(position , 1.0);
     
 }

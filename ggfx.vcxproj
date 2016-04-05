@@ -24,10 +24,10 @@
     <ClCompile Include="ggfx\GL\gl3w.c" />
     <ClCompile Include="ggfx\GPUBuffer.cpp" />
     <ClCompile Include="ggfx\DebugUI.cpp" />
-    <ClCompile Include="ggfx\ggfx.cpp" />
     <ClCompile Include="ggfx\Input.cpp" />
     <ClCompile Include="ggfx\Log.cpp" />
     <ClCompile Include="ggfx\MappedBuffer.cpp" />
+    <ClCompile Include="ggfx\ShaderEditing.cpp" />
     <ClCompile Include="ggfx\ShaderPipeline.cpp" />
     <ClCompile Include="ggfx\Texture.cpp" />
     <ClCompile Include="ggfx\util.cpp" />
@@ -45,6 +45,7 @@
     <ClInclude Include="ggfx\Log.h" />
     <ClInclude Include="ggfx\MappedBuffer.h" />
     <ClInclude Include="ggfx\resources.h" />
+    <ClInclude Include="ggfx\ShaderEditing.h" />
     <ClInclude Include="ggfx\ShaderPipeline.h" />
     <ClInclude Include="ggfx\Texture.h" />
     <ClInclude Include="ggfx\types.h" />

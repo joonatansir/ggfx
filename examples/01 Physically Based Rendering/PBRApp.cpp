@@ -12,6 +12,7 @@
 #include "GPUBuffer.h"
 #include "Input.h"
 #include "Assets.h"
+#include "ShaderEditing.h"
 
 //TODO: remove this
 #include "GLFWWindow.h"
@@ -51,6 +52,7 @@ static void fpsCamera(glm::quat& rotation, glm::vec3& pos, glm::vec2& delta, flo
 
     static glm::vec3 velocity;
     velocity += (updown + rightleft + frontback) * movementSpeed;
+
     pos += velocity * dt;
     velocity *= 0.8f;
 }
@@ -228,7 +230,7 @@ void PBRApp::update(float dt)
 
 void PBRApp::init()
 {
-    Assets::scanAssetDirectory("../assets/");
+    Assets::scanAssetDirectory("assets/");
 
     //TODO: Remove this from here
     uint32 vao;
@@ -301,4 +303,6 @@ void PBRApp::init()
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
+
+    //LIVE_EDIT("asdasdasd");
 }
