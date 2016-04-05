@@ -46,13 +46,14 @@ Shader ShaderPipeline::createShaderProgram(const char* filename, uint32 type)
     shader.id = glCreateShaderProgramv(type, 1, (const char**)&source);
     delete[] source;
 
-    //Error checking
+#if defined(_DEBUG)
     char buffer[512] = {0};
     int32 length;
     glGetProgramInfoLog(shader.id, 512, &length, buffer);
 
     if(length > 0)
         Log::error(buffer);
+#endif
 
     return shader;
 }

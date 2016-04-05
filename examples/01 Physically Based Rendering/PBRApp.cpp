@@ -303,6 +303,7 @@ void PBRApp::init()
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     //LIVE_EDIT("asdasdasd");
 }
