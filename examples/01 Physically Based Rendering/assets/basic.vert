@@ -29,19 +29,18 @@ void main()
 	//float posX = mod(gl_InstanceID, 10) * gap;
 	//float posZ = -trunc(gl_InstanceID / 10) * gap;
 	//float posY = sin(time*2.5+posX/5.0)*4.0 * sin(time*10.0+posZ/10.0)*2.0;
-	float ring = (trunc(gl_InstanceID / 100)+1);
-	float radius = ring * 10.0;
-	float step = (2.0*pi)/100.0;
-	vec3 dir = vec3(sin(gl_InstanceID*step)*radius, 0.0, cos(gl_InstanceID*step)*radius);
-    
-	if(gl_InstanceID < 100)
-		position += dir*9999;
-	else
-		position += dir + vec3(0.0, sin(time*4.0+gl_InstanceID)*ring*2.0, 0.0);// + dir * cos(time);
+	//float ring = (trunc(gl_InstanceID / 100)+1);
+	//float radius = ring * 10.0;
+	//float step = (2.0*pi)/100.0;
+	//vec3 dir = vec3(sin(gl_InstanceID*step)*radius, 0.0, cos(gl_InstanceID*step)*radius);
+	
+	//if(gl_InstanceID < 100)
+	//	position += dir*9999;
+	//else
+	//	position += dir + vec3(0.0, sin(time*4.0+gl_InstanceID)*ring*2.0, 0.0);// + dir * cos(time);
 		
 	//position.x += sin(time * 10.0 + position.y);
 	//position.z += cos(time * 5.0 + position.y * 2.0);
 	
-    gl_Position = projection * view * model * vec4(position + normal * ring/3.0 , 1.0);
-    
+    gl_Position = projection * view * model * vec4(position , 1.0);
 }

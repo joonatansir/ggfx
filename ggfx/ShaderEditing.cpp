@@ -1,6 +1,41 @@
-#include "ShaderEditing.h"
+#if defined(_DEBUG)
 
-void headerStatic(const char* thing)
+#include <windows.h>
+#include <atlbase.h>
+
+#include "ShaderEditing.h"
+#include "Log.h"
+
+using namespace ggfx;
+
+void checkForShaderUpdate(Shader& shader)
 {
-    ggfx::Log::info("THIS IS HEADER STATIC! %s\n", thing);
+    USES_CONVERSION;
+    HANDLE file = CreateFile(
+        A2W(shader.info.filename.c_str()),
+        GENERIC_READ,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+    if (file != INVALID_HANDLE_VALUE)
+    {
+        FILETIME filetime;
+        if (GetFileTime(file, NULL, NULL, &filetime))
+        {
+            uint64 lastModified = filetime.dwHighDateTime;
+            lastModified = (lastModified << 32) | filetime.dwLowDateTime;
+            
+            if (shader.info.lastModified != lastModified)
+            {
+                Log::info("Shader modified, recompiling!");
+                shader.info.lastModified = lastModified;
+                shader.info.pipeline->recompile();
+            }
+        }
+        CloseHandle(file);
+    }
 }
+
+#endif

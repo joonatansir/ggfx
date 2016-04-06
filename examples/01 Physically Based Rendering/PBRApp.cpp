@@ -91,13 +91,16 @@ static glm::vec2 lastCursorPosition;
 
 void PBRApp::update(float dt)
 {
+    CHECK_FOR_SHADER_UPDATE(pipeline.vertexShader);
+    CHECK_FOR_SHADER_UPDATE(pipeline.fragmentShader);
+
     glm::mat4 world;
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
     world = glm::translate(world, pos);
     world = glm::scale(world, scale);
     world = glm::rotate(world, rotationAmount, rotation);
-
+    
     int32 key_w = (glfwGetKey(window->handle->ptr, GLFW_KEY_W) == GLFW_PRESS);
     int32 key_a = (glfwGetKey(window->handle->ptr, GLFW_KEY_A) == GLFW_PRESS);
     int32 key_s = (glfwGetKey(window->handle->ptr, GLFW_KEY_S) == GLFW_PRESS);
@@ -148,26 +151,6 @@ void PBRApp::update(float dt)
         ImGui::SliderFloat("Y", &cameraPos[1], -50.0f, 50.0f);
         ImGui::SameLine();
         ImGui::SliderFloat("Z", &cameraPos[2], -50.0f, 50.0f);
-
-        if (ImGui::Button("Recompile shaders"))
-        {
-            pipeline.recompile();
-            pipeline2.recompile();
-
-            timeLocation_vs = pipeline.vertexShader.getUniformLocation("time");
-            timeLocation = pipeline.fragmentShader.getUniformLocation("time");
-            samplerLocation = pipeline.fragmentShader.getUniformLocation("sampler");
-            samplerLocation2 = pipeline.fragmentShader.getUniformLocation("sampler2");
-            cubemapLocation = pipeline2.fragmentShader.getUniformLocation("cubemap");
-            cubemapSamplerLocation = pipeline.fragmentShader.getUniformLocation("cubemapSampler");
-
-            modelTransformLocation = pipeline.vertexShader.getUniformLocation("model");
-            viewTransformLocation = pipeline.vertexShader.getUniformLocation("view");
-            projectionTransformLocation = pipeline.vertexShader.getUniformLocation("projection");
-            viewCubemap = pipeline2.vertexShader.getUniformLocation("view");
-            projectionLoc = pipeline2.vertexShader.getUniformLocation("projection");
-        }
-
         ImGui::End();
     }
 
@@ -217,7 +200,7 @@ void PBRApp::update(float dt)
         (GLsizei)(indexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
-        2000);
+        1);
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
@@ -260,7 +243,7 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("fox.bof"), &indices, &vertexBufferSize, &indexBufferSize);
 
     VertexBuffer* vertexBuffer = VertexBuffer::create(
         vertexBufferSize,
@@ -281,24 +264,22 @@ void PBRApp::init()
     vertexBuffer->enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float));
     vertexBuffer->enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float));
 
-    timeLocation_vs = pipeline.vertexShader.getUniformLocation("time");
-    timeLocation = pipeline.fragmentShader.getUniformLocation("time");
-    samplerLocation = pipeline.fragmentShader.getUniformLocation("sampler");
-    samplerLocation2 = pipeline.fragmentShader.getUniformLocation("sampler2");
-    cubemapLocation = pipeline2.fragmentShader.getUniformLocation("cubemap");
-    cubemapSamplerLocation = pipeline.fragmentShader.getUniformLocation("cubemapSampler");
+    pipeline.vertexShader.getUniformLocation(&timeLocation_vs, "time");
+    pipeline.fragmentShader.getUniformLocation(&timeLocation, "time");
+    pipeline.fragmentShader.getUniformLocation(&samplerLocation, "sampler");
+    pipeline.fragmentShader.getUniformLocation(&samplerLocation2, "sampler2");
+    pipeline2.fragmentShader.getUniformLocation(&cubemapLocation, "cubemap");
+    pipeline.fragmentShader.getUniformLocation(&cubemapSamplerLocation, "cubemapSampler");
 
-    modelTransformLocation = pipeline.vertexShader.getUniformLocation("model");
-    viewTransformLocation = pipeline.vertexShader.getUniformLocation("view");
-    projectionTransformLocation = pipeline.vertexShader.getUniformLocation("projection");
-    viewCubemap = pipeline2.vertexShader.getUniformLocation("view");
-    projectionLoc = pipeline2.vertexShader.getUniformLocation("projection");
+    pipeline.vertexShader.getUniformLocation(&modelTransformLocation, "model");
+    pipeline.vertexShader.getUniformLocation(&viewTransformLocation, "view");
+    pipeline.vertexShader.getUniformLocation(&projectionTransformLocation, "projection");
+    pipeline2.vertexShader.getUniformLocation(&viewCubemap, "view");
+    pipeline2.vertexShader.getUniformLocation(&projectionLoc, "projection");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-    //LIVE_EDIT("asdasdasd");
 }

@@ -9,14 +9,37 @@
 
 using namespace ggfx;
 
-ShaderPipeline::ShaderPipeline(Shader vertex, Shader fragment) :
-    vertexShader(vertex),
-    fragmentShader(fragment)
+#if defined(_DEBUG)
+#define CHECK_PROGRAM_INFO_LOG(id)                   \
+    char buffer[512] = { 0 };                        \
+    int32 length;                                    \
+    glGetProgramInfoLog((id), 512, &length, buffer); \
+    if (length > 0) Log::info(buffer);              \
+
+#else
+#define CHECK_PROGRAM_INFO_LOG(id)
+#endif
+
+static void LinkUniformLocations(Shader& shader)
 {
+    for (uint32 i = 0; i < shader.uniformCount; i++)
+    {
+        *shader.uniformLocations[i] = glGetUniformLocation(shader.id, shader.uniformNames[i][0]);
+    }
 }
 
 ShaderPipeline::ShaderPipeline()
 {
+}
+
+ShaderPipeline& ShaderPipeline::operator=(ShaderPipeline& pipeline)
+{
+    id = pipeline.id;
+    vertexShader = pipeline.vertexShader;
+    fragmentShader = pipeline.fragmentShader;
+    vertexShader.info.pipeline = this;
+    fragmentShader.info.pipeline = this;
+    return *this;
 }
 
 ShaderPipeline::~ShaderPipeline()
@@ -30,60 +53,66 @@ void ShaderPipeline::useProgramStage(uint32 shaderID, uint32 stages)
 
 void ShaderPipeline::recompile()
 {
+    glBindProgramPipeline(id);
     recompileShader(vertexShader, GL_VERTEX_SHADER_BIT);
     recompileShader(fragmentShader, GL_FRAGMENT_SHADER_BIT);
+
+    //Get new uniform locations
+    LinkUniformLocations(vertexShader);
+    LinkUniformLocations(fragmentShader);
+
     Log::info("Pipeline %u recompiled!\n", id);
 }
 
 void ShaderPipeline::recompileShader(Shader& shader, uint32 stages)
 {
     glDeleteProgram(shader.id);
-    shader = createShaderProgram(shader.filename, shader.type);
+    recreateShaderProgram(shader);
     useProgramStage(shader.id, stages);
+}
+
+void ShaderPipeline::recreateShaderProgram(Shader& shader)
+{
+    const uint8* source = loadFile(shader.info.filename);
+    shader.id = glCreateShaderProgramv(shader.type, 1, (const char**)&source);
+    delete[] source;
+    CHECK_PROGRAM_INFO_LOG(shader.id);
 }
 
 Shader ShaderPipeline::createShaderProgram(const std::string& filename, uint32 type)
 {
-    Shader shader = { 0, type, filename };
+    Shader shader;
+    shader.type = type;
+    shader.info.lastModified = 0;
+    shader.info.filename = filename;
+    shader.uniformCount = 0;
+
     const uint8* source = loadFile(filename);
     shader.id = glCreateShaderProgramv(type, 1, (const char**)&source);
     delete[] source;
-
-#if defined(_DEBUG)
-    char buffer[512] = {0};
-    int32 length;
-    glGetProgramInfoLog(shader.id, 512, &length, buffer);
-
-    if(length > 0)
-        Log::error(buffer);
-#endif
+    CHECK_PROGRAM_INFO_LOG(shader.id);
 
     return shader;
 }
 
-ShaderPipeline ShaderPipeline::createPipeline(const Shader& vertexShader, const Shader& fragmentShader)
+ShaderPipeline ShaderPipeline::createPipelineFromFile(const std::string& filename)
 {
-    ShaderPipeline pipeline(vertexShader, fragmentShader);
+    ShaderPipeline pipeline;
 
-    glGenProgramPipelines(1, &pipeline.id);
-    glBindProgramPipeline(pipeline.id);
-
-    pipeline.useProgramStage(pipeline.vertexShader.id, GL_VERTEX_SHADER_BIT);
-    pipeline.useProgramStage(pipeline.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
-
-    glBindProgramPipeline(0);
-
-    return pipeline;
-}
-
-ShaderPipeline ggfx::ShaderPipeline::createPipelineFromFile(const std::string& filename)
-{
-    //@TODO: Support all types of shaders
     std::string vertexFilename(Assets::getPath(filename + ".vert"));
     std::string fragmentFilename(Assets::getPath(filename + ".frag"));
 
-    Shader vertexShader = createShaderProgram(vertexFilename, GL_VERTEX_SHADER);
-    Shader fragmentShader = createShaderProgram(fragmentFilename, GL_FRAGMENT_SHADER);
+    pipeline.vertexShader = createShaderProgram(vertexFilename, GL_VERTEX_SHADER);
+    pipeline.fragmentShader = createShaderProgram(fragmentFilename, GL_FRAGMENT_SHADER);
 
-    return createPipeline(vertexShader, fragmentShader);
+    pipeline.vertexShader.info.pipeline = &pipeline;
+    pipeline.fragmentShader.info.pipeline = &pipeline;
+
+    glGenProgramPipelines(1, &pipeline.id);
+    glBindProgramPipeline(pipeline.id);
+    pipeline.useProgramStage(pipeline.vertexShader.id, GL_VERTEX_SHADER_BIT);
+    pipeline.useProgramStage(pipeline.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
+    glBindProgramPipeline(0);
+
+    return pipeline;
 }

@@ -2,19 +2,42 @@
 
 #include <string>
 
+#include <GL/gl3w.h>
+
 #include "types.h"
+#include "Log.h"
 
 namespace ggfx
 {
+    class ShaderPipeline;
+
     struct Shader
     {
         uint32 id;
         uint32 type;
-        std::string filename; //Store filename for recompiling
+        int32* uniformLocations[16];
+        char* uniformNames[16][100];
+        uint32 uniformCount;
 
-        inline int32 getUniformLocation(const char* name)
+        struct
         {
-            return glGetUniformLocation(id, name);
+            uint64 lastModified;
+            std::string filename;
+            ShaderPipeline* pipeline;
+        } info;
+
+        void getUniformLocation(int32* uniformLocation, char* name)
+        {
+            if (uniformCount >= 16)
+            {
+                Log::warning("Max uniforms exceeded!");
+                return;
+            }
+
+            *uniformLocation = glGetUniformLocation(id, name);
+            uniformLocations[uniformCount] = uniformLocation;
+            uniformNames[uniformCount][0] = name;
+            uniformCount++;
         }
     };
 
@@ -22,6 +45,7 @@ namespace ggfx
     {
     public:
 
+        ShaderPipeline& operator =(ShaderPipeline& pipeline);
         ShaderPipeline();
         ~ShaderPipeline();
 
@@ -29,17 +53,12 @@ namespace ggfx
         void recompile();
         void recompileShader(Shader& shader, uint32 stages);
 
+        static void recreateShaderProgram(Shader& shader);
         static Shader createShaderProgram(const std::string& filename, uint32 type);
-        static ShaderPipeline createPipeline(const Shader& vertexShader, const Shader& fragmentShader);
-        static ShaderPipeline createPipelineFromFile(const std::string& name);
+        static ShaderPipeline createPipelineFromFile(const std::string& filename);
 
         uint32 id;
         Shader vertexShader;
         Shader fragmentShader;
-
-    private:
-
-        ShaderPipeline(Shader vertex, Shader fragment);
-
     };
 }
