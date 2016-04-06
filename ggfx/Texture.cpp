@@ -4,7 +4,7 @@
 
 using namespace ggfx;
 
-const Texture::TextureFormat Texture::DEFAULT_TEXTURE_FORMAT = { GL_RGBA, true };
+const Texture::TextureOptions Texture::DEFAULT_TEXTURE_OPTIONS = { GL_RGBA, true };
 
 Texture::Texture(uint32 type):
     type(type),
@@ -26,7 +26,7 @@ void Texture::bind(uint32 activeUnit)
     glBindTexture(type, id);
 }
 
-Texture Texture::create2DFromFile(const char * filename, TextureFormat format)
+Texture Texture::create2DFromFile(const std::string& filename, TextureOptions format)
 {
     Texture texture(GL_TEXTURE_2D);
 
@@ -40,7 +40,7 @@ Texture Texture::create2DFromFile(const char * filename, TextureFormat format)
     return texture;
 }
 
-Texture Texture::createCubemapFromFile(const char* filenames[6], TextureFormat format)
+Texture Texture::createCubemapFromFile(const std::string filenames[6], TextureOptions format)
 {
     Texture texture(GL_TEXTURE_CUBE_MAP);
 
@@ -61,9 +61,16 @@ Texture Texture::createCubemapFromFile(const char* filenames[6], TextureFormat f
     return texture;
 }
 
-Texture ggfx::Texture::createCubemapFromFile(const char * posx, const char * negx, const char * posy, const char * negy, const char * posz, const char * negz, TextureFormat format)
+Texture ggfx::Texture::createCubemapFromFile(
+    const std::string& posx,
+    const std::string& negx,
+    const std::string& posy,
+    const std::string& negy,
+    const std::string& posz,
+    const std::string& negz, 
+    TextureOptions format)
 {
-    const char* filenames[] =
+    const std::string filenames[] =
     {
         posx, negx,
         posy, negy,

@@ -217,7 +217,7 @@ void PBRApp::update(float dt)
         (GLsizei)(indexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
-        100);
+        2000);
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
@@ -237,7 +237,7 @@ void PBRApp::init()
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    const char* filenames[] = {
+    const std::string filenames[] = {
         Assets::getPath("sky/sky_right.bmp"),
         Assets::getPath("sky/sky_left.bmp"),
         Assets::getPath("sky/sky_top.bmp"),
@@ -255,13 +255,8 @@ void PBRApp::init()
     texture2.bind(GL_TEXTURE1);
     texture.bind(GL_TEXTURE2);
 
-    pipeline = ShaderPipeline::createPipeline(
-        Assets::getPath("basic.vert"),
-        Assets::getPath("basic.frag"));
-
-    pipeline2 = ShaderPipeline::createPipeline(
-        Assets::getPath("cubemap.vert"),
-        Assets::getPath("cubemap.frag"));
+    pipeline = ShaderPipeline::createPipelineFromFile("basic");
+    pipeline2 = ShaderPipeline::createPipelineFromFile("cubemap");
 
     uint32* indices;
     uint32 vertexBufferSize;

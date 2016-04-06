@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "types.h"
 
 namespace ggfx
@@ -8,7 +10,7 @@ namespace ggfx
     {
         uint32 id;
         uint32 type;
-        const char* filename; //Store filename for recompiling
+        std::string filename; //Store filename for recompiling
 
         inline int32 getUniformLocation(const char* name)
         {
@@ -27,9 +29,9 @@ namespace ggfx
         void recompile();
         void recompileShader(Shader& shader, uint32 stages);
 
-        static Shader createShaderProgram(const char* filename, uint32 type);
-        static ShaderPipeline createPipeline(const char* vertexShader, const char* fragmentShader);
+        static Shader createShaderProgram(const std::string& filename, uint32 type);
         static ShaderPipeline createPipeline(const Shader& vertexShader, const Shader& fragmentShader);
+        static ShaderPipeline createPipelineFromFile(const std::string& name);
 
         uint32 id;
         Shader vertexShader;

@@ -1,8 +1,11 @@
+#include <string>
+
 #include <GL/gl3w.h>
 
 #include "ShaderPipeline.h"
 #include "util.h"
 #include "Log.h"
+#include "Assets.h"
 
 using namespace ggfx;
 
@@ -39,7 +42,7 @@ void ShaderPipeline::recompileShader(Shader& shader, uint32 stages)
     useProgramStage(shader.id, stages);
 }
 
-Shader ShaderPipeline::createShaderProgram(const char* filename, uint32 type)
+Shader ShaderPipeline::createShaderProgram(const std::string& filename, uint32 type)
 {
     Shader shader = { 0, type, filename };
     const uint8* source = loadFile(filename);
@@ -58,15 +61,7 @@ Shader ShaderPipeline::createShaderProgram(const char* filename, uint32 type)
     return shader;
 }
 
-ShaderPipeline ShaderPipeline::createPipeline(const char* vertexSource, const char* fragmentSource)
-{
-    Shader vertexShader = createShaderProgram(vertexSource, GL_VERTEX_SHADER);
-    Shader fragmentShader = createShaderProgram(fragmentSource, GL_FRAGMENT_SHADER);
-
-    return createPipeline(vertexShader, fragmentShader);
-}
-
-ShaderPipeline ShaderPipeline::createPipeline(const Shader & vertexShader, const Shader & fragmentShader)
+ShaderPipeline ShaderPipeline::createPipeline(const Shader& vertexShader, const Shader& fragmentShader)
 {
     ShaderPipeline pipeline(vertexShader, fragmentShader);
 
@@ -79,4 +74,16 @@ ShaderPipeline ShaderPipeline::createPipeline(const Shader & vertexShader, const
     glBindProgramPipeline(0);
 
     return pipeline;
+}
+
+ShaderPipeline ggfx::ShaderPipeline::createPipelineFromFile(const std::string& filename)
+{
+    //@TODO: Support all types of shaders
+    std::string vertexFilename(Assets::getPath(filename + ".vert"));
+    std::string fragmentFilename(Assets::getPath(filename + ".frag"));
+
+    Shader vertexShader = createShaderProgram(vertexFilename, GL_VERTEX_SHADER);
+    Shader fragmentShader = createShaderProgram(fragmentFilename, GL_FRAGMENT_SHADER);
+
+    return createPipeline(vertexShader, fragmentShader);
 }

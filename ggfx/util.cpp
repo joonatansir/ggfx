@@ -50,11 +50,11 @@ namespace ggfx
         return aValue < bValue;
     }
 
-    const uint8* loadFile(const char* filename)
+    const uint8* loadFile(const std::string& filename)
     {
         uint8* result = 0;
         
-        FILE* file = fopen(filename, "rb");
+        FILE* file = fopen(filename.c_str(), "rb");
         if(file)
         {
             fseek(file, 0, SEEK_END);
@@ -188,11 +188,11 @@ namespace ggfx
         return result;
     }*/
 
-    float* loadBOF(const char* filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize)
+    float* loadBOF(const std::string& filename, uint32** indices, uint32* vertexBufferSize, uint32* indexBufferSize)
     {
         float* result = 0;
 
-        FILE* file = fopen(filename, "rb");
+        FILE* file = fopen(filename.c_str(), "rb");
         if (file)
         {
             fread(vertexBufferSize, sizeof(uint32), 1, file);
@@ -212,10 +212,10 @@ namespace ggfx
         return result;
     }
 
-    uint8* loadImage(const char* filename, int32* x, int32* y, int32* n, bool flipY)
+    uint8* loadImage(const std::string& filename, int32* x, int32* y, int32* n, bool flipY)
     {
         stbi_set_flip_vertically_on_load(flipY);
-        uint8* data = stbi_load(filename, x, y, n, 4);
+        uint8* data = stbi_load(filename.c_str(), x, y, n, 4);
         assert(x != 0 && y != 0);
         return data;
     }

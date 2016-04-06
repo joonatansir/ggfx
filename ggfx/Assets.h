@@ -14,7 +14,7 @@ namespace ggfx
         Assets& operator =(const Assets&) = delete;
         
         static void scanAssetDirectory(const std::string& path, const std::string& directoryName = "");
-        static const char* getPath(char* assetName);
+        static std::string& getPath(const std::string& assetName);
 
     private:
 
