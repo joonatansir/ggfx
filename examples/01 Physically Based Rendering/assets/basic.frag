@@ -26,5 +26,6 @@ void main()
     //color = texture(cubemapSampler, normal) * texture(sampler2, textureCoord);
     //color = mix(texture(sampler, textureCoord), texture(sampler2, textureCoord), 0.5*sin(time)+0.5);
     //color = vec4(position.y/10.0 + 0.5, normal.r, position.y/20.0 + 0.1, 1.0);
-	//color()
+	color = texture(sampler2, vec2(textureCoord.x*(sin(time+textureCoord.y)*4.0), textureCoord.y));
+	//color = texture(sampler2, textureCoord);
 }

@@ -22,7 +22,7 @@ Texture::~Texture()
 
 void Texture::bind(uint32 activeUnit)
 {
-    glActiveTexture(activeUnit);
+    glActiveTexture(GL_TEXTURE0 + activeUnit);
     glBindTexture(type, id);
 }
 

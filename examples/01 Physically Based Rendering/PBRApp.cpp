@@ -134,10 +134,21 @@ void PBRApp::update(float dt)
 
     ui.update(window);
 
+    const int32 frames = 100;
+    static float averageFrameRate = 0.0f;
+    static float rollingFrametimeCounter[frames] = { 0.0f };
+    static int32 currentFrame = 0;
+    
+    averageFrameRate += dt - rollingFrametimeCounter[currentFrame];
+    rollingFrametimeCounter[currentFrame] = dt;
+    currentFrame = ++currentFrame % frames;
+    
+    Log::warning("%f\n", averageFrameRate);
+
     {
         ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
         ImGui::Begin("Stats", 0, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-        ImGui::Text("dt %.3f ms", dt * 1000.0f);
+        ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
         ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
         ImGui::End();
     }
@@ -170,10 +181,10 @@ void PBRApp::update(float dt)
 
     glProgramUniform1f(pipeline.vertexShader.id, timeLocation_vs, (float)getTime());
     glProgramUniform1f(pipeline.fragmentShader.id, timeLocation, (float)getTime());
-    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation, 0);
-    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation2, 1);
-    glProgramUniform1i(pipeline.fragmentShader.id, cubemapSamplerLocation, 2);
-    glProgramUniform1i(pipeline2.fragmentShader.id, cubemapLocation, 2);
+    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation, 1);
+    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation2, 2);
+    glProgramUniform1i(pipeline.fragmentShader.id, cubemapSamplerLocation, 3);
+    glProgramUniform1i(pipeline2.fragmentShader.id, cubemapLocation, 3);
 
     glProgramUniformMatrix4fv(pipeline2.vertexShader.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
     glProgramUniformMatrix4fv(pipeline2.vertexShader.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
@@ -229,21 +240,21 @@ void PBRApp::init()
         Assets::getPath("sky/sky_back.bmp"),
     };
 
+    Texture vivi_color = Texture::create2DFromFile(Assets::getPath("vivi_color.psd"));
     Texture cubemap = Texture::createCubemapFromFile(filenames, { GL_RGBA, false });
-    cubemap.bind(GL_TEXTURE2);
-
     Texture texture = Texture::create2DFromFile(Assets::getPath("checker2.png"));
-
     Texture texture2 = Texture::create2DFromFile(Assets::getPath("checker.png"));
-    texture2.bind(GL_TEXTURE1);
-    texture.bind(GL_TEXTURE2);
+
+    texture2.bind(2);
+    vivi_color.bind(1);
+    cubemap.bind(3);
 
     pipeline = ShaderPipeline::createPipelineFromFile("basic");
     pipeline2 = ShaderPipeline::createPipelineFromFile("cubemap");
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("fox.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("vivi.bof"), &indices, &vertexBufferSize, &indexBufferSize);
 
     VertexBuffer* vertexBuffer = VertexBuffer::create(
         vertexBufferSize,
