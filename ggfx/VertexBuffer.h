@@ -8,12 +8,7 @@ namespace ggfx
     {
     public:
 
-        static VertexBuffer* create(uint32 size, void* data, uint32 usage);
-
-        void enableVexterAttribute(uint32 location, int32 components, uint32 type, bool normalized, uint32 stride, uint32 offset);
-    
-    private:
-
-        VertexBuffer(uint32 type, uint32 size);
+        VertexBuffer(uint32 size, void* data, GLenum usage);
+        void enableVexterAttribute(GLuint index, GLint components, GLenum type, GLboolean normalized, GLsizei stride, const void* offset);
     };
 }

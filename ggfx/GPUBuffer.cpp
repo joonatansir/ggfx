@@ -4,11 +4,12 @@
 
 using namespace ggfx;
 
-GPUBuffer::GPUBuffer(uint32 type, uint32 size) :
+GPUBuffer::GPUBuffer(GLenum type, uint32 size, void* data, GLenum usage) :
     id(0),
     type(type),
     size(size)
 {
+    create(data, usage);
 }
 
 GPUBuffer::~GPUBuffer()
@@ -26,7 +27,7 @@ void GPUBuffer::unbind()
     glBindBuffer(type, 0);
 }
 
-void GPUBuffer::create(void* data, uint32 usage)
+void GPUBuffer::create(void* data, GLenum usage)
 {
     glGenBuffers(1, &id);
     glBindBuffer(type, id);
@@ -34,9 +35,9 @@ void GPUBuffer::create(void* data, uint32 usage)
     glBindBuffer(type, 0);
 }
 
-GPUBuffer* GPUBuffer::create(uint32 type, uint32 size, void * data, uint32 usage)
+void GPUBuffer::update(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
 {
-    GPUBuffer* buffer = new GPUBuffer(type, size);
-    buffer->create(data, usage);
-    return buffer;
+    glBindBuffer(type, id);
+    glBufferSubData(target, offset, size, data);
+    glBindBuffer(type, 0);
 }

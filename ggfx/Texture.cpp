@@ -46,14 +46,14 @@ Texture Texture::createCubemapFromFile(const std::string filenames[6], TextureOp
 
     int32 x, y, n;
     uint8* data[6];
-    for (uint32 i = 0; i < 6; i++)
+    for (int32 i = 0; i < 6; i++)
     {
         data[i] = loadImage(filenames[i], &x, &y, &n, format.flipY);
     }
 
     texture.createCube(data, x, y, format.internalFormat);
 
-    for (uint32 i = 0; i < 6; i++)
+    for (int32 i = 0; i < 6; i++)
     {
         freeImageData(data[i]);
     }
@@ -103,7 +103,7 @@ void Texture::createCube(uint8 * data[6], uint32 x, uint32 y, uint32 format)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-    for (uint32 i = 0; i < 6; i++)
+    for (int32 i = 0; i < 6; i++)
     {
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data[i]);
     }

@@ -54,9 +54,6 @@
     <ClCompile Include="ggfx\GPUBuffer.cpp">
       <Filter>Source Files\Buffers</Filter>
     </ClCompile>
-    <ClCompile Include="ggfx\MappedBuffer.cpp">
-      <Filter>Source Files\Buffers</Filter>
-    </ClCompile>
     <ClCompile Include="ggfx\VertexBuffer.cpp">
       <Filter>Source Files\Buffers</Filter>
     </ClCompile>
@@ -77,6 +74,9 @@
     </ClCompile>
     <ClCompile Include="thirdparty\src\imgui\imgui_draw.cpp">
       <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ggfx\PersistentBuffer.cpp">
+      <Filter>Source Files\Buffers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -119,9 +119,6 @@
     <ClInclude Include="ggfx\GPUBuffer.h">
       <Filter>Header Files\Buffers</Filter>
     </ClInclude>
-    <ClInclude Include="ggfx\MappedBuffer.h">
-      <Filter>Header Files\Buffers</Filter>
-    </ClInclude>
     <ClInclude Include="ggfx\VertexBuffer.h">
       <Filter>Header Files\Buffers</Filter>
     </ClInclude>
@@ -130,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="ggfx\ShaderEditing.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ggfx\PersistentBuffer.h">
+      <Filter>Header Files\Buffers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

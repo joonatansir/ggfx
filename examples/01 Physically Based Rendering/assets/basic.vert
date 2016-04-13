@@ -21,8 +21,8 @@ const float pi = 3.141592;
 void main()
 {
     textureCoord = inTexCoord;
-    normal = inNormal;
-    position = inPosition;
+    normal = (model * vec4(inNormal, 1.0)).xyz;
+	position = inPosition;
     
     //position.z -= gl_InstanceIDasd;
     //float gap = 4.0;

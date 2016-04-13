@@ -26,12 +26,13 @@ Window::Window(uint32 width, uint32 height, const char * title)
     assert(handle->ptr);
 
     glfwMakeContextCurrent(handle->ptr);
-    //glfwSwapInterval(1);
+    glfwSwapInterval(1);
 }
 
 Window::~Window()
 {
     glfwTerminate();
+    delete handle;
 }
 
 int32 Window::shouldClose()

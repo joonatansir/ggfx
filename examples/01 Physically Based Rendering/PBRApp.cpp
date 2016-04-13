@@ -254,26 +254,18 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("vivi.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
 
-    VertexBuffer* vertexBuffer = VertexBuffer::create(
-        vertexBufferSize,
-        dataBof,
-        GL_STATIC_DRAW);
+    VertexBuffer vertexBuffer(vertexBufferSize, dataBof, GL_STATIC_DRAW);
+    GPUBuffer indexBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indices, GL_STATIC_DRAW);
 
-    GPUBuffer* indexBuffer = GPUBuffer::create(
-        GL_ELEMENT_ARRAY_BUFFER,
-        indexBufferSize,
-        indices,
-        GL_STATIC_DRAW);
-
-    vertexBuffer->bind();
-    indexBuffer->bind();
+    vertexBuffer.bind();
+    indexBuffer.bind();
 
     uint32 stride = 8 * sizeof(float);
-    vertexBuffer->enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
-    vertexBuffer->enableVexterAttribute(1, 3, GL_FLOAT, false, stride, 3 * sizeof(float));
-    vertexBuffer->enableVexterAttribute(2, 2, GL_FLOAT, false, stride, 6 * sizeof(float));
+    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
+    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float)));
+    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float)));
 
     pipeline.vertexShader.getUniformLocation(&timeLocation_vs, "time");
     pipeline.fragmentShader.getUniformLocation(&timeLocation, "time");

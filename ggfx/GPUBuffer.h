@@ -12,21 +12,19 @@ namespace ggfx
     {
     public:
 
+        GPUBuffer(GLenum type, uint32 size, void* data, GLenum usage);
         virtual ~GPUBuffer();
 
         void bind();
         void unbind();
+        void update(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
         
-        static GPUBuffer* create(uint32 type, uint32 size, void* data, uint32 usage);
-
-        uint32 id;
+        GLuint id;
+        GLenum type;
         uint32 size;
-        uint32 type;
 
     protected:
 
-        GPUBuffer(uint32 type, uint32 size);
-        
-        void create(void* data, uint32 usage);
+        void create(void* data, GLenum usage);
     };
 }

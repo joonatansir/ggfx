@@ -14,7 +14,7 @@ using namespace ggfx;
     char buffer[512] = { 0 };                        \
     int32 length;                                    \
     glGetProgramInfoLog((id), 512, &length, buffer); \
-    if (length > 0) Log::info(buffer);              \
+    if (length > 0) Log::info(buffer);               \
 
 #else
 #define CHECK_PROGRAM_INFO_LOG(id)

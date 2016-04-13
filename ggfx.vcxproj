@@ -25,7 +25,7 @@
     <ClCompile Include="ggfx\DebugUI.cpp" />
     <ClCompile Include="ggfx\Input.cpp" />
     <ClCompile Include="ggfx\Log.cpp" />
-    <ClCompile Include="ggfx\MappedBuffer.cpp" />
+    <ClCompile Include="ggfx\PersistentBuffer.cpp" />
     <ClCompile Include="ggfx\ShaderEditing.cpp" />
     <ClCompile Include="ggfx\ShaderPipeline.cpp" />
     <ClCompile Include="ggfx\Texture.cpp" />
@@ -46,7 +46,7 @@
     <ClInclude Include="ggfx\ggfx.h" />
     <ClInclude Include="ggfx\Input.h" />
     <ClInclude Include="ggfx\Log.h" />
-    <ClInclude Include="ggfx\MappedBuffer.h" />
+    <ClInclude Include="ggfx\PersistentBuffer.h" />
     <ClInclude Include="ggfx\resources.h" />
     <ClInclude Include="ggfx\ShaderEditing.h" />
     <ClInclude Include="ggfx\ShaderPipeline.h" />
