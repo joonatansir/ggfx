@@ -45,8 +45,8 @@ namespace ggfx
     {
     public:
 
-        ShaderPipeline& operator =(ShaderPipeline& pipeline);
         ShaderPipeline();
+        ShaderPipeline& operator =(ShaderPipeline& pipeline);
         ~ShaderPipeline();
 
         void useProgramStage(uint32 shaderID, uint32 stages);

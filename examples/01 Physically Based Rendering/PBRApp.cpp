@@ -254,7 +254,7 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("dr.bof"), &indices, &vertexBufferSize, &indexBufferSize);
 
     VertexBuffer vertexBuffer(vertexBufferSize, dataBof, GL_STATIC_DRAW);
     GPUBuffer indexBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indices, GL_STATIC_DRAW);
