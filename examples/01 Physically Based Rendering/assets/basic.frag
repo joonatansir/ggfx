@@ -1,8 +1,10 @@
 #version 450 core
 
-smooth in vec3 position;
-smooth in vec3 normal;
-smooth in vec2 textureCoord;
+in VS_OUT
+{
+	vec3 normal;
+	vec2 textureCoord;
+} fs_in;
 
 out vec4 color;
 
@@ -13,12 +15,5 @@ uniform samplerCube cubemapSampler;
 
 void main()
 {
-    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-
-    vec3 ambient = vec3(0.0, 0.0, 0.0);
-    vec3 diffuse = normal;
-    float contribution = max(0.0, dot(lightDir, normal));
-	
-	//color = texture(cubemapSampler, normal);
-	color = vec4(0.5*normal+0.5, 1.0);
+	color = vec4(0.5*fs_in.normal+0.5, 1.0);
 }

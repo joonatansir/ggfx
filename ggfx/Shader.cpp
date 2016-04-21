@@ -73,7 +73,7 @@ void Shader::getUniformLocation(GLint* uniformLocation, char* name)
 
 void Shader::recompile()
 {
-    assert(info.pipeline->id != 0);
+    assert(info.pipeline && info.pipeline->id != 0);
 
     glBindProgramPipeline(info.pipeline->id);
     glDeleteProgram(id);

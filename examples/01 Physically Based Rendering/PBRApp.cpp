@@ -103,6 +103,7 @@ void PBRApp::update(float dt)
 {
     CHECK_FOR_SHADER_UPDATE(basicVert);
     CHECK_FOR_SHADER_UPDATE(basicFrag);
+    CHECK_FOR_SHADER_UPDATE(voxelGeom);
 
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -174,17 +175,18 @@ void PBRApp::init()
     basicFrag.create(Assets::getPath("basic.frag"), GL_FRAGMENT_SHADER);
     CubemapVert.create(Assets::getPath("cubemap.vert"), GL_VERTEX_SHADER);
     CubemapFrag.create(Assets::getPath("cubemap.frag"), GL_FRAGMENT_SHADER);
-    //voxelGeom.create("voxel.geom", GL_GEOMETRY_SHADER);
+    voxelGeom.create(Assets::getPath("voxel.geom"), GL_GEOMETRY_SHADER);
 
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
+    pipeline.useProgramStage(voxelGeom);
 
     pipeline2.useProgramStage(CubemapVert);
     pipeline2.useProgramStage(CubemapFrag);
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("dr.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
 
     VertexBuffer vertexBuffer(vertexBufferSize, dataBof, GL_STATIC_DRAW);
     GPUBuffer indexBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indices, GL_STATIC_DRAW);
@@ -193,9 +195,9 @@ void PBRApp::init()
     indexBuffer.bind();
 
     uint32 stride = 8 * sizeof(float);
-    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);
-    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float)));
-    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float)));
+    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);                           //position
+    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float))); //normal
+    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float))); //texture coord
 
     basicVert.getUniformLocation(&timeLocation_vs, "time");
     basicVert.getUniformLocation(&modelTransformLocation, "model");
@@ -289,6 +291,7 @@ void PBRApp::render(float dt)
 
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
+    pipeline.useProgramStage(voxelGeom);
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
