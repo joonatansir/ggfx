@@ -78,6 +78,9 @@
     <ClCompile Include="ggfx\PersistentBuffer.cpp">
       <Filter>Source Files\Buffers</Filter>
     </ClCompile>
+    <ClCompile Include="ggfx\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ggfx\ggfx.h">
@@ -130,6 +133,9 @@
     </ClInclude>
     <ClInclude Include="ggfx\PersistentBuffer.h">
       <Filter>Header Files\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="ggfx\Shader.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

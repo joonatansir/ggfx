@@ -19,5 +19,6 @@ void main()
     vec3 diffuse = normal;
     float contribution = max(0.0, dot(lightDir, normal));
 	
-	color = texture(cubemapSampler, normal);
+	//color = texture(cubemapSampler, normal);
+	color = vec4(0.5*normal+0.5, 1.0);
 }

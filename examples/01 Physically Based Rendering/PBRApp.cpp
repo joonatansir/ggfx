@@ -13,6 +13,7 @@
 #include "Input.h"
 #include "Assets.h"
 #include "ShaderEditing.h"
+#include "Shader.h"
 
 //TODO: remove this
 #include "GLFWWindow.h"
@@ -60,6 +61,12 @@ static void fpsCamera(glm::quat& rotation, glm::vec3& pos, glm::vec2& delta, flo
 static ShaderPipeline pipeline;
 static ShaderPipeline pipeline2;
 
+static Shader basicVert;
+static Shader basicFrag;
+static Shader CubemapVert;
+static Shader CubemapFrag;
+static Shader voxelGeom;
+
 static uint32 indexBufferSize;
 
 static int32 timeLocation_vs;
@@ -81,7 +88,7 @@ static float rotationAmount = 0.0f;
 static glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 //Camera
-static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
+static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 static float angle = 0.0f;
 static glm::quat rot(cos(angle / 2.0f), sin(angle / 2.0f)*glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -94,22 +101,12 @@ static glm::vec2 lastCursorPosition;
 
 void PBRApp::update(float dt)
 {
-    CHECK_FOR_SHADER_UPDATE(pipeline.vertexShader);
-    CHECK_FOR_SHADER_UPDATE(pipeline.fragmentShader);
+    CHECK_FOR_SHADER_UPDATE(basicVert);
+    CHECK_FOR_SHADER_UPDATE(basicFrag);
 
-    world = glm::mat4();
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
-    world = glm::translate(world, pos);
-    world = glm::scale(world, scale);
-    world = glm::rotate(world, rotationAmount, rotation);
-    
-    int32 key_w = (glfwGetKey(window->handle->ptr, GLFW_KEY_W) == GLFW_PRESS);
-    int32 key_a = (glfwGetKey(window->handle->ptr, GLFW_KEY_A) == GLFW_PRESS);
-    int32 key_s = (glfwGetKey(window->handle->ptr, GLFW_KEY_S) == GLFW_PRESS);
-    int32 key_d = (glfwGetKey(window->handle->ptr, GLFW_KEY_D) == GLFW_PRESS);
-    int32 key_q = (glfwGetKey(window->handle->ptr, GLFW_KEY_Q) == GLFW_PRESS);
-    int32 key_e = (glfwGetKey(window->handle->ptr, GLFW_KEY_E) == GLFW_PRESS);
+    world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotation);
 
     glm::vec2 delta(0);
     int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_RIGHT);
@@ -118,22 +115,24 @@ void PBRApp::update(float dt)
         glm::vec2 newCursorPosition(Input::mousePosition.x, Input::mousePosition.y);
         delta = lerp(lastCursorPosition, newCursorPosition, 0.1f * dt) - lastCursorPosition;
     }
+    lastCursorPosition = glm::vec2(Input::mousePosition.x, Input::mousePosition.y);
 
     float movementSpeed = dt * 400.0f;
-
     if ((glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))
     {
         movementSpeed *= 0.1f;
     }
 
-    lastCursorPosition = glm::vec2(Input::mousePosition.x, Input::mousePosition.y);
+    int32 key_w = (glfwGetKey(window->handle->ptr, GLFW_KEY_W) == GLFW_PRESS);
+    int32 key_a = (glfwGetKey(window->handle->ptr, GLFW_KEY_A) == GLFW_PRESS);
+    int32 key_s = (glfwGetKey(window->handle->ptr, GLFW_KEY_S) == GLFW_PRESS);
+    int32 key_d = (glfwGetKey(window->handle->ptr, GLFW_KEY_D) == GLFW_PRESS);
+    int32 key_q = (glfwGetKey(window->handle->ptr, GLFW_KEY_Q) == GLFW_PRESS);
+    int32 key_e = (glfwGetKey(window->handle->ptr, GLFW_KEY_E) == GLFW_PRESS);
 
     fpsCamera(rot, cameraPos, delta, movementSpeed, dt, key_w, key_a, key_s, key_d, key_q, key_e);
-
-    view = glm::mat4();
-    view = glm::translate(view, cameraPos);
-    view = view * glm::mat4_cast(rot);
-    view = glm::inverse(view);
+    
+    view = glm::inverse(glm::translate(glm::mat4(), cameraPos) * glm::mat4_cast(rot));
 
     if (GLFW_PRESS == glfwGetKey(window->handle->ptr, GLFW_KEY_ESCAPE))
     {
@@ -168,8 +167,20 @@ void PBRApp::init()
     vivi_color.bind(1);
     cubemap.bind(3);
 
-    pipeline = ShaderPipeline::createPipelineFromFile("basic");
-    pipeline2 = ShaderPipeline::createPipelineFromFile("cubemap");
+    pipeline.create();
+    pipeline2.create();
+
+    basicVert.create(Assets::getPath("basic.vert"), GL_VERTEX_SHADER);
+    basicFrag.create(Assets::getPath("basic.frag"), GL_FRAGMENT_SHADER);
+    CubemapVert.create(Assets::getPath("cubemap.vert"), GL_VERTEX_SHADER);
+    CubemapFrag.create(Assets::getPath("cubemap.frag"), GL_FRAGMENT_SHADER);
+    //voxelGeom.create("voxel.geom", GL_GEOMETRY_SHADER);
+
+    pipeline.useProgramStage(basicVert);
+    pipeline.useProgramStage(basicFrag);
+
+    pipeline2.useProgramStage(CubemapVert);
+    pipeline2.useProgramStage(CubemapFrag);
 
     uint32* indices;
     uint32 vertexBufferSize;
@@ -186,18 +197,19 @@ void PBRApp::init()
     vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float)));
     vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float)));
 
-    pipeline.vertexShader.getUniformLocation(&timeLocation_vs, "time");
-    pipeline.fragmentShader.getUniformLocation(&timeLocation, "time");
-    pipeline.fragmentShader.getUniformLocation(&samplerLocation, "sampler");
-    pipeline.fragmentShader.getUniformLocation(&samplerLocation2, "sampler2");
-    pipeline2.fragmentShader.getUniformLocation(&cubemapLocation, "cubemap");
-    pipeline.fragmentShader.getUniformLocation(&cubemapSamplerLocation, "cubemapSampler");
-
-    pipeline.vertexShader.getUniformLocation(&modelTransformLocation, "model");
-    pipeline.vertexShader.getUniformLocation(&viewTransformLocation, "view");
-    pipeline.vertexShader.getUniformLocation(&projectionTransformLocation, "projection");
-    pipeline2.vertexShader.getUniformLocation(&viewCubemap, "view");
-    pipeline2.vertexShader.getUniformLocation(&projectionLoc, "projection");
+    basicVert.getUniformLocation(&timeLocation_vs, "time");
+    basicVert.getUniformLocation(&modelTransformLocation, "model");
+    basicVert.getUniformLocation(&viewTransformLocation, "view");
+    basicVert.getUniformLocation(&projectionTransformLocation, "projection");
+    
+    basicFrag.getUniformLocation(&timeLocation, "time");
+    basicFrag.getUniformLocation(&samplerLocation, "sampler");
+    basicFrag.getUniformLocation(&samplerLocation2, "sampler2");
+    basicFrag.getUniformLocation(&cubemapSamplerLocation, "cubemapSampler");
+    
+    CubemapFrag.getUniformLocation(&cubemapLocation, "cubemap");
+    CubemapVert.getUniformLocation(&viewCubemap, "view");
+    CubemapVert.getUniformLocation(&projectionLoc, "projection");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -252,33 +264,31 @@ void PBRApp::render(float dt)
         ImGui::End();
     }
 
+    glProgramUniformMatrix4fv(basicVert.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
+    glProgramUniformMatrix4fv(basicVert.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
+    glProgramUniformMatrix4fv(basicVert.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
+    glProgramUniform1f(basicVert.id, timeLocation_vs, (float)getTime());
+    glProgramUniform1f(basicFrag.id, timeLocation, (float)getTime());
+    glProgramUniform1i(basicFrag.id, samplerLocation, 1);
+    glProgramUniform1i(basicFrag.id, samplerLocation2, 2);
+    glProgramUniform1i(basicFrag.id, cubemapSamplerLocation, 3);
 
-    glProgramUniform1f(pipeline.vertexShader.id, timeLocation_vs, (float)getTime());
-    glProgramUniform1f(pipeline.fragmentShader.id, timeLocation, (float)getTime());
-    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation, 1);
-    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation2, 2);
-    glProgramUniform1i(pipeline.fragmentShader.id, cubemapSamplerLocation, 3);
-    glProgramUniform1i(pipeline2.fragmentShader.id, cubemapLocation, 3);
-
-    glProgramUniformMatrix4fv(pipeline2.vertexShader.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
-    glProgramUniformMatrix4fv(pipeline2.vertexShader.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
-
-    glProgramUniformMatrix4fv(pipeline.vertexShader.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
-    glProgramUniformMatrix4fv(pipeline.vertexShader.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
-    glProgramUniformMatrix4fv(pipeline.vertexShader.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
+    glProgramUniform1i(CubemapFrag.id, cubemapLocation, 3);
+    glProgramUniformMatrix4fv(CubemapVert.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
+    glProgramUniformMatrix4fv(CubemapVert.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
 
     glBindProgramPipeline(pipeline2.id);
 
     //debug only
-    pipeline2.useProgramStage(pipeline2.vertexShader.id, GL_VERTEX_SHADER_BIT);
-    pipeline2.useProgramStage(pipeline2.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
+    pipeline2.useProgramStage(CubemapVert);
+    pipeline2.useProgramStage(CubemapFrag);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindProgramPipeline(pipeline.id);
 
-    pipeline.useProgramStage(pipeline.vertexShader.id, GL_VERTEX_SHADER_BIT);
-    pipeline.useProgramStage(pipeline.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
+    pipeline.useProgramStage(basicVert);
+    pipeline.useProgramStage(basicFrag);
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
