@@ -85,7 +85,10 @@ static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
 static float angle = 0.0f;
 static glm::quat rot(cos(angle / 2.0f), sin(angle / 2.0f)*glm::vec3(0.0f, 1.0f, 0.0f));
 
+//Matrices
 static glm::mat4 projection = glm::perspective(PI / 4.0f, (float)1280 / 720, 0.1f, 1000.0f);
+static glm::mat4 view;
+static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
@@ -94,7 +97,7 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(pipeline.vertexShader);
     CHECK_FOR_SHADER_UPDATE(pipeline.fragmentShader);
 
-    glm::mat4 world;
+    world = glm::mat4();
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
     world = glm::translate(world, pos);
@@ -127,94 +130,10 @@ void PBRApp::update(float dt)
 
     fpsCamera(rot, cameraPos, delta, movementSpeed, dt, key_w, key_a, key_s, key_d, key_q, key_e);
 
-    glm::mat4 view;
+    view = glm::mat4();
     view = glm::translate(view, cameraPos);
     view = view * glm::mat4_cast(rot);
     view = glm::inverse(view);
-
-    ui.update(window);
-
-    const int32 frames = 100;
-    static float averageFrameRate = 0.0f;
-    static float rollingFrametimeCounter[frames] = { 0.0f };
-    static int32 currentFrame = 0;
-    
-    averageFrameRate += dt - rollingFrametimeCounter[currentFrame];
-    rollingFrametimeCounter[currentFrame] = dt;
-    currentFrame = ++currentFrame % frames;
-    
-    Log::warning("%f\n", averageFrameRate);
-
-    {
-        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
-        ImGui::Begin("Stats", 0, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-        ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
-        ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
-        ImGui::End();
-    }
-
-    {
-        ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-        ImGui::Begin("Debug");
-        ImGui::PushItemWidth(ImGui::GetWindowWidth()*0.2f);
-        ImGui::SliderFloat("X", &cameraPos[0], -50.0f, 50.0f);
-        ImGui::SameLine();
-        ImGui::SliderFloat("Y", &cameraPos[1], -50.0f, 50.0f);
-        ImGui::SameLine();
-        ImGui::SliderFloat("Z", &cameraPos[2], -50.0f, 50.0f);
-        ImGui::End();
-    }
-
-    {
-        //ImGui::TextUnformatted((const char *)stuff);
-        //ImGui::ShowTestWindow();
-        ImGui::Begin("Object");
-        ImGui::SliderFloat3("Position", &pos[0], -100.0f, 100.0f);
-        ImGui::SliderFloat("Scale", &scaleAmount, 0.1f, 100.0f);
-        ImGui::SliderAngle("Rotation", &rotationAmount);
-        ImGui::End();
-    }
-
-    //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glProgramUniform1f(pipeline.vertexShader.id, timeLocation_vs, (float)getTime());
-    glProgramUniform1f(pipeline.fragmentShader.id, timeLocation, (float)getTime());
-    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation, 1);
-    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation2, 2);
-    glProgramUniform1i(pipeline.fragmentShader.id, cubemapSamplerLocation, 3);
-    glProgramUniform1i(pipeline2.fragmentShader.id, cubemapLocation, 3);
-
-    glProgramUniformMatrix4fv(pipeline2.vertexShader.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
-    glProgramUniformMatrix4fv(pipeline2.vertexShader.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
-
-    glProgramUniformMatrix4fv(pipeline.vertexShader.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
-    glProgramUniformMatrix4fv(pipeline.vertexShader.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
-    glProgramUniformMatrix4fv(pipeline.vertexShader.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
-
-    glBindProgramPipeline(pipeline2.id);
-
-    //debug only
-    pipeline2.useProgramStage(pipeline2.vertexShader.id, GL_VERTEX_SHADER_BIT);
-    pipeline2.useProgramStage(pipeline2.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glBindProgramPipeline(pipeline.id);
-
-    pipeline.useProgramStage(pipeline.vertexShader.id, GL_VERTEX_SHADER_BIT);
-    pipeline.useProgramStage(pipeline.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
-
-    glDrawElementsInstanced(
-        GL_TRIANGLES,
-        (GLsizei)(indexBufferSize / sizeof(uint32)),
-        GL_UNSIGNED_INT,
-        0,
-        1);
-
-    ImGui::Render();
-    ui.render(ImGui::GetDrawData());
 
     if (GLFW_PRESS == glfwGetKey(window->handle->ptr, GLFW_KEY_ESCAPE))
     {
@@ -285,4 +204,89 @@ void PBRApp::init()
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+}
+
+void PBRApp::render(float dt)
+{
+    //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    const int32 frames = 100;
+    static float averageFrameRate = 0.0f;
+    static float rollingFrametimeCounter[frames] = { 0.0f };
+    static int32 currentFrame = 0;
+    averageFrameRate += dt - rollingFrametimeCounter[currentFrame];
+    rollingFrametimeCounter[currentFrame] = dt;
+    currentFrame = ++currentFrame % frames;
+
+    ui.update(window);
+
+    {
+        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
+        ImGui::Begin("Stats", 0, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+        ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
+        ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
+        ImGui::End();
+    }
+
+    {
+        ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+        ImGui::Begin("Debug");
+        ImGui::PushItemWidth(ImGui::GetWindowWidth()*0.2f);
+        ImGui::SliderFloat("X", &cameraPos[0], -50.0f, 50.0f);
+        ImGui::SameLine();
+        ImGui::SliderFloat("Y", &cameraPos[1], -50.0f, 50.0f);
+        ImGui::SameLine();
+        ImGui::SliderFloat("Z", &cameraPos[2], -50.0f, 50.0f);
+        ImGui::End();
+    }
+
+    {
+        //ImGui::TextUnformatted((const char *)stuff);
+        //ImGui::ShowTestWindow();
+        ImGui::Begin("Object");
+        ImGui::SliderFloat3("Position", &pos[0], -100.0f, 100.0f);
+        ImGui::SliderFloat("Scale", &scaleAmount, 0.1f, 100.0f);
+        ImGui::SliderAngle("Rotation", &rotationAmount);
+        ImGui::End();
+    }
+
+
+    glProgramUniform1f(pipeline.vertexShader.id, timeLocation_vs, (float)getTime());
+    glProgramUniform1f(pipeline.fragmentShader.id, timeLocation, (float)getTime());
+    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation, 1);
+    glProgramUniform1i(pipeline.fragmentShader.id, samplerLocation2, 2);
+    glProgramUniform1i(pipeline.fragmentShader.id, cubemapSamplerLocation, 3);
+    glProgramUniform1i(pipeline2.fragmentShader.id, cubemapLocation, 3);
+
+    glProgramUniformMatrix4fv(pipeline2.vertexShader.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
+    glProgramUniformMatrix4fv(pipeline2.vertexShader.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
+
+    glProgramUniformMatrix4fv(pipeline.vertexShader.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
+    glProgramUniformMatrix4fv(pipeline.vertexShader.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
+    glProgramUniformMatrix4fv(pipeline.vertexShader.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
+
+    glBindProgramPipeline(pipeline2.id);
+
+    //debug only
+    pipeline2.useProgramStage(pipeline2.vertexShader.id, GL_VERTEX_SHADER_BIT);
+    pipeline2.useProgramStage(pipeline2.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glBindProgramPipeline(pipeline.id);
+
+    pipeline.useProgramStage(pipeline.vertexShader.id, GL_VERTEX_SHADER_BIT);
+    pipeline.useProgramStage(pipeline.fragmentShader.id, GL_FRAGMENT_SHADER_BIT);
+
+    glDrawElementsInstanced(
+        GL_TRIANGLES,
+        (GLsizei)(indexBufferSize / sizeof(uint32)),
+        GL_UNSIGNED_INT,
+        0,
+        1);
+
+    ImGui::Render();
+    ui.render(ImGui::GetDrawData());
 }

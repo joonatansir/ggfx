@@ -10,6 +10,7 @@ public:
     ~PBRApp();
 
     virtual void update(float dt);
+    virtual void render(float dt);
     virtual void init();
 
     ggfx::DebugUI ui;

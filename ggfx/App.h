@@ -26,6 +26,7 @@ namespace ggfx
     private:
 
         virtual void update(float dt) = 0;
+        virtual void render(float dt) = 0;
         virtual void init() = 0;
 
     };

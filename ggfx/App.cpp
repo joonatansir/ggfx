@@ -47,18 +47,29 @@ void App::run()
 {
     this->init();
 
+    float dt = 0.016f;
+    float accumulator = 0.0f;
+
     while (!window->shouldClose())
     {
-        //TODO: fix my timestep
-        float time = (float)glfwGetTime();
-        static float lastFrameTime = time;
-        float dt = time - lastFrameTime;
-        lastFrameTime = time;
+        float currentFrameTime = (float)glfwGetTime();
+        static float lastFrameTime = currentFrameTime;
+        float frametime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
 
-        Input::frameStart(window);
-        this->update(dt);
-        Input::frameEnd(window);
+        accumulator += frametime;
+
+        while (accumulator >= dt)
+        {
+            Input::frameStart(window);
+            this->update(dt);
+            Input::frameEnd(window);
+
+            accumulator -= dt;
+        }
         
+        this->render(frametime);
+
         window->swapBuffers();
         window->pollEvents();
     }
