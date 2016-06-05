@@ -66,6 +66,8 @@ static Shader basicFrag;
 static Shader CubemapVert;
 static Shader CubemapFrag;
 static Shader voxelGeom;
+static Shader voxelFrag;
+static Shader voxelVert;
 
 static uint32 indexBufferSize;
 
@@ -81,6 +83,8 @@ static int32 viewTransformLocation;
 static int32 projectionTransformLocation;
 static int32 viewCubemap;
 static int32 projectionLoc;
+
+uint32 vaos[2];
 
 //Object
 static float scaleAmount = 1.0f;
@@ -101,7 +105,15 @@ static glm::vec2 lastCursorPosition;
 
 static void voxelize()
 {
+    CHECK_FOR_SHADER_UPDATE(voxelGeom);
+    CHECK_FOR_SHADER_UPDATE(voxelFrag);
+    CHECK_FOR_SHADER_UPDATE(voxelVert);
+
+    glBindVertexArray(vaos[1]);
+
     pipeline.useProgramStage(voxelGeom);
+    pipeline.useProgramStage(voxelFrag);
+    pipeline.useProgramStage(voxelVert);
 
     int voxelGridSize = 32;
 
@@ -109,28 +121,111 @@ static void voxelize()
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
 
-    glm::mat4 projection = glm::ortho(5, 5, 5, 5);
+    glm::mat4 projection = glm::ortho(-5, 5, -5, 5);
     glm::mat4 view = glm::mat4();
     glProgramUniformMatrix4fv(basicVert.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
     glProgramUniformMatrix4fv(basicVert.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
 
     glViewport(0, 0, voxelGridSize, voxelGridSize);
 
-    glDrawElementsInstanced(
-        GL_TRIANGLES,
-        (GLsizei)(indexBufferSize / sizeof(uint32)),
-        GL_UNSIGNED_INT,
-        0,
-        1);
+    glDrawArrays(GL_TRIANGLES, 0, voxelGridSize*voxelGridSize*voxelGridSize);
 
+    pipeline.clearProgramStage(voxelVert);
+    pipeline.clearProgramStage(voxelFrag);
     pipeline.clearProgramStage(voxelGeom);
+
+    glEnable(GL_DEPTH_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+
+    glBindVertexArray(vaos[0]);
+}
+
+void PBRApp::init()
+{
+    int32 imageLimit;
+    glGetIntegerv(GL_MAX_VERTEX_IMAGE_UNIFORMS, &imageLimit);
+    Log::info("VERTEX IMAGE UNIFORM LIMIT: %d\n", imageLimit);
+
+    Assets::scanAssetDirectory("assets/");
+
+    //TODO: Remove this from here
+    
+    glGenVertexArrays(2, vaos);
+    glBindVertexArray(vaos[0]);
+
+    const std::string filenames[] = {
+        Assets::getPath("sky/sky_right.bmp"),
+        Assets::getPath("sky/sky_left.bmp"),
+        Assets::getPath("sky/sky_top.bmp"),
+        Assets::getPath("sky/sky_bottom.bmp"),
+        Assets::getPath("sky/sky_front.bmp"),
+        Assets::getPath("sky/sky_back.bmp"),
+    };
+
+    Texture vivi_color = Texture::create2DFromFile(Assets::getPath("vivi_color.psd"));
+    Texture cubemap = Texture::createCubemapFromFile(filenames, { GL_RGBA, false });
+    Texture texture = Texture::create2DFromFile(Assets::getPath("checker2.png"));
+    Texture texture2 = Texture::create2DFromFile(Assets::getPath("checker.png"));
+
+    texture2.bind(2);
+    vivi_color.bind(1);
+    cubemap.bind(3);
+
+    pipeline.create();
+    pipeline2.create();
+
+    basicVert.create(Assets::getPath("basic.vert"), GL_VERTEX_SHADER);
+    basicFrag.create(Assets::getPath("basic.frag"), GL_FRAGMENT_SHADER);
+    CubemapVert.create(Assets::getPath("cubemap.vert"), GL_VERTEX_SHADER);
+    CubemapFrag.create(Assets::getPath("cubemap.frag"), GL_FRAGMENT_SHADER);
+    voxelGeom.create(Assets::getPath("voxel.geom"), GL_GEOMETRY_SHADER);
+    voxelFrag.create(Assets::getPath("voxel.frag"), GL_FRAGMENT_SHADER);
+    voxelVert.create(Assets::getPath("voxel.vert"), GL_VERTEX_SHADER);
+
+    pipeline.useProgramStage(basicVert);
+    pipeline.useProgramStage(basicFrag);
+    pipeline.useProgramStage(voxelGeom);
+
+    pipeline2.useProgramStage(CubemapVert);
+    pipeline2.useProgramStage(CubemapFrag);
+
+    uint32* indices;
+    uint32 vertexBufferSize;
+    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+
+    VertexBuffer vertexBuffer(vertexBufferSize, dataBof, GL_STATIC_DRAW);
+    GPUBuffer indexBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indices, GL_STATIC_DRAW);
+
+    vertexBuffer.bind();
+    indexBuffer.bind();
+
+    uint32 stride = 8 * sizeof(float);
+    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);                           //position
+    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float))); //normal
+    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float))); //texture coord
+
+    basicVert.getUniformLocation(&timeLocation_vs, "time");
+    basicVert.getUniformLocation(&modelTransformLocation, "model");
+    basicVert.getUniformLocation(&viewTransformLocation, "view");
+    basicVert.getUniformLocation(&projectionTransformLocation, "projection");
+
+    basicFrag.getUniformLocation(&timeLocation, "time");
+    basicFrag.getUniformLocation(&samplerLocation, "sampler");
+    basicFrag.getUniformLocation(&samplerLocation2, "sampler2");
+    basicFrag.getUniformLocation(&cubemapSamplerLocation, "cubemapSampler");
+
+    CubemapFrag.getUniformLocation(&cubemapLocation, "cubemap");
+    CubemapVert.getUniformLocation(&viewCubemap, "view");
+    CubemapVert.getUniformLocation(&projectionLoc, "projection");
+
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void PBRApp::update(float dt)
 {
     CHECK_FOR_SHADER_UPDATE(basicVert);
     CHECK_FOR_SHADER_UPDATE(basicFrag);
-    CHECK_FOR_SHADER_UPDATE(voxelGeom);
 
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -168,81 +263,6 @@ void PBRApp::update(float dt)
     }
 }
 
-void PBRApp::init()
-{
-    Assets::scanAssetDirectory("assets/");
-
-    //TODO: Remove this from here
-    uint32 vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    const std::string filenames[] = {
-        Assets::getPath("sky/sky_right.bmp"),
-        Assets::getPath("sky/sky_left.bmp"),
-        Assets::getPath("sky/sky_top.bmp"),
-        Assets::getPath("sky/sky_bottom.bmp"),
-        Assets::getPath("sky/sky_front.bmp"),
-        Assets::getPath("sky/sky_back.bmp"),
-    };
-
-    Texture vivi_color = Texture::create2DFromFile(Assets::getPath("vivi_color.psd"));
-    Texture cubemap = Texture::createCubemapFromFile(filenames, { GL_RGBA, false });
-    Texture texture = Texture::create2DFromFile(Assets::getPath("checker2.png"));
-    Texture texture2 = Texture::create2DFromFile(Assets::getPath("checker.png"));
-
-    texture2.bind(2);
-    vivi_color.bind(1);
-    cubemap.bind(3);
-
-    pipeline.create();
-    pipeline2.create();
-
-    basicVert.create(Assets::getPath("basic.vert"), GL_VERTEX_SHADER);
-    basicFrag.create(Assets::getPath("basic.frag"), GL_FRAGMENT_SHADER);
-    CubemapVert.create(Assets::getPath("cubemap.vert"), GL_VERTEX_SHADER);
-    CubemapFrag.create(Assets::getPath("cubemap.frag"), GL_FRAGMENT_SHADER);
-    voxelGeom.create(Assets::getPath("voxel.geom"), GL_GEOMETRY_SHADER);
-
-    pipeline.useProgramStage(basicVert);
-    pipeline.useProgramStage(basicFrag);
-    pipeline.useProgramStage(voxelGeom);
-
-    pipeline2.useProgramStage(CubemapVert);
-    pipeline2.useProgramStage(CubemapFrag);
-
-    uint32* indices;
-    uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
-
-    VertexBuffer vertexBuffer(vertexBufferSize, dataBof, GL_STATIC_DRAW);
-    GPUBuffer indexBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indices, GL_STATIC_DRAW);
-
-    vertexBuffer.bind();
-    indexBuffer.bind();
-
-    uint32 stride = 8 * sizeof(float);
-    vertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);                           //position
-    vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float))); //normal
-    vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float))); //texture coord
-
-    basicVert.getUniformLocation(&timeLocation_vs, "time");
-    basicVert.getUniformLocation(&modelTransformLocation, "model");
-    basicVert.getUniformLocation(&viewTransformLocation, "view");
-    basicVert.getUniformLocation(&projectionTransformLocation, "projection");
-    
-    basicFrag.getUniformLocation(&timeLocation, "time");
-    basicFrag.getUniformLocation(&samplerLocation, "sampler");
-    basicFrag.getUniformLocation(&samplerLocation2, "sampler2");
-    basicFrag.getUniformLocation(&cubemapSamplerLocation, "cubemapSampler");
-    
-    CubemapFrag.getUniformLocation(&cubemapLocation, "cubemap");
-    CubemapVert.getUniformLocation(&viewCubemap, "view");
-    CubemapVert.getUniformLocation(&projectionLoc, "projection");
-
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-}
-
 void PBRApp::render(float dt)
 {
     glViewport(0, 0, window->getSize().x, window->getSize().y);
@@ -250,8 +270,6 @@ void PBRApp::render(float dt)
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
 
     //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -302,6 +320,9 @@ void PBRApp::render(float dt)
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
 
+    glBindVertexArray(vaos[0]);
+
+    //model
     glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(indexBufferSize / sizeof(uint32)),
@@ -309,8 +330,8 @@ void PBRApp::render(float dt)
         0,
         1);
 
+    voxelize();
+
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
-
-    voxelize();
 }

@@ -29,7 +29,6 @@ void checkForShaderUpdate(Shader& shader)
             
             if (shader.info.lastModified != lastModified)
             {
-                Log::info("Shader %s modified, recompiling!", shader.info.filename.c_str());
                 shader.info.lastModified = lastModified;
                 shader.recompile();
             }

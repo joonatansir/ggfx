@@ -22,7 +22,7 @@ Shader::Shader() :
 {
 }
 
-Shader::Shader(const std::string & filename, GLenum type) :
+Shader::Shader(const std::string& filename, GLenum type) :
     info{0, 0, 0, ""}
 {
     create(filename, type);
@@ -33,7 +33,7 @@ Shader::~Shader()
     glDeleteProgram(id);
 }
 
-void Shader::create(const std::string & filename, GLenum type)
+void Shader::create(const std::string& filename, GLenum type)
 {
     this->type = type;
     info.filename = filename;
@@ -73,17 +73,19 @@ void Shader::getUniformLocation(GLint* uniformLocation, char* name)
 
 void Shader::recompile()
 {
-    assert(info.pipeline && info.pipeline->id != 0);
-
-    glBindProgramPipeline(info.pipeline->id);
     glDeleteProgram(id);
     create(info.filename, type);
-    info.pipeline->useProgramStage(*this);
+    
+    if (info.pipeline && info.pipeline->id != 0)
+    {
+        glBindProgramPipeline(info.pipeline->id);
+        info.pipeline->useProgramStage(*this);
+    }
 
     for (uint32 i = 0; i < uniformCount; i++)
     {
         *uniformLocations[i] = glGetUniformLocation(id, uniformNames[i][0]);
     }
 
-    Log::info("Pipeline %u recompiled!\n", info.pipeline->id);
+    Log::info("Shader %s recompiled!\n", info.filename.c_str());
 }
