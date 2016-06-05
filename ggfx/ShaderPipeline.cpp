@@ -26,6 +26,12 @@ void ShaderPipeline::useProgramStage(Shader& shader)
     glUseProgramStages(id, shader.info.stages, shader.id);
 }
 
+void ShaderPipeline::clearProgramStage(Shader& shader)
+{
+    assert(id != 0);
+    glUseProgramStages(id, shader.info.stages, 0);
+}
+
 void ShaderPipeline::create()
 {
     glGenProgramPipelines(1, &id);

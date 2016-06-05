@@ -18,6 +18,7 @@ namespace ggfx
         ~ShaderPipeline();
 
         void useProgramStage(Shader& shader);
+        void clearProgramStage(Shader& shader);
         void create();
 
         uint32 id;

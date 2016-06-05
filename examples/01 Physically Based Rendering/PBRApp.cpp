@@ -99,6 +99,33 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
+static void voxelize()
+{
+    pipeline.useProgramStage(voxelGeom);
+
+    int voxelGridSize = 32;
+
+    glDisable(GL_DEPTH_TEST);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
+    glm::mat4 projection = glm::ortho(5, 5, 5, 5);
+    glm::mat4 view = glm::mat4();
+    glProgramUniformMatrix4fv(basicVert.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
+    glProgramUniformMatrix4fv(basicVert.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
+
+    glViewport(0, 0, voxelGridSize, voxelGridSize);
+
+    glDrawElementsInstanced(
+        GL_TRIANGLES,
+        (GLsizei)(indexBufferSize / sizeof(uint32)),
+        GL_UNSIGNED_INT,
+        0,
+        1);
+
+    pipeline.clearProgramStage(voxelGeom);
+}
+
 void PBRApp::update(float dt)
 {
     CHECK_FOR_SHADER_UPDATE(basicVert);
@@ -213,15 +240,19 @@ void PBRApp::init()
     CubemapVert.getUniformLocation(&viewCubemap, "view");
     CubemapVert.getUniformLocation(&projectionLoc, "projection");
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
-    glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void PBRApp::render(float dt)
 {
+    glViewport(0, 0, window->getSize().x, window->getSize().y);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glDepthFunc(GL_LEQUAL);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+
     //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -244,28 +275,6 @@ void PBRApp::render(float dt)
         ImGui::End();
     }
 
-    {
-        ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-        ImGui::Begin("Debug");
-        ImGui::PushItemWidth(ImGui::GetWindowWidth()*0.2f);
-        ImGui::SliderFloat("X", &cameraPos[0], -50.0f, 50.0f);
-        ImGui::SameLine();
-        ImGui::SliderFloat("Y", &cameraPos[1], -50.0f, 50.0f);
-        ImGui::SameLine();
-        ImGui::SliderFloat("Z", &cameraPos[2], -50.0f, 50.0f);
-        ImGui::End();
-    }
-
-    {
-        //ImGui::TextUnformatted((const char *)stuff);
-        //ImGui::ShowTestWindow();
-        ImGui::Begin("Object");
-        ImGui::SliderFloat3("Position", &pos[0], -100.0f, 100.0f);
-        ImGui::SliderFloat("Scale", &scaleAmount, 0.1f, 100.0f);
-        ImGui::SliderAngle("Rotation", &rotationAmount);
-        ImGui::End();
-    }
-
     glProgramUniformMatrix4fv(basicVert.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
     glProgramUniformMatrix4fv(basicVert.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
     glProgramUniformMatrix4fv(basicVert.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
@@ -285,13 +294,13 @@ void PBRApp::render(float dt)
     pipeline2.useProgramStage(CubemapVert);
     pipeline2.useProgramStage(CubemapFrag);
 
+    //cubemap
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindProgramPipeline(pipeline.id);
 
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
-    pipeline.useProgramStage(voxelGeom);
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
@@ -302,4 +311,6 @@ void PBRApp::render(float dt)
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
+
+    voxelize();
 }

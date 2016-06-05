@@ -58,8 +58,6 @@ void Log::drawButton(uint32& selectedBuffer, uint32 bufferId, const char* title)
 
     if (selected)
         ImGui::PopStyleColor();
-
-
 }
 
 void Log::draw()
@@ -90,6 +88,7 @@ void Log::draw()
 
     if (log->scrollToBottom)
         ImGui::SetScrollHere(1.0f);
+
     log->scrollToBottom = false;
 
     ImGui::EndChild();
