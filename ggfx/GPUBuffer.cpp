@@ -4,40 +4,71 @@
 
 using namespace ggfx;
 
-GPUBuffer::GPUBuffer(GLenum type, uint32 size, void* data, GLenum usage) :
+GPUBuffer::GPUBuffer(BufferTarget target) :
     id(0),
-    type(type),
-    size(size)
+    target(getGLenumFromBufferTarget(target))
+{ };
+
+GPUBuffer::GPUBuffer(void* data, uint32 size, BufferTarget target, GLenum usage) :
+    data((uint8*)data),
+    target(getGLenumFromBufferTarget(target))
 {
-    create(data, usage);
+    switch (target)
+    {
+    case BufferTarget::Persistent:
+        createPersistent(size);
+        break;
+    default:
+        create(data, size, usage);
+        break;
+    }
 }
 
-GPUBuffer::~GPUBuffer()
+GLenum GPUBuffer::getGLenumFromBufferTarget(BufferTarget target)
 {
-    //TODO: delete buffers here
+    switch (target)
+    {
+    case BufferTarget::Index:
+        return GL_ELEMENT_ARRAY_BUFFER;
+    default:
+        return GL_ARRAY_BUFFER;
+    }
+}
+
+void GPUBuffer::create(void* data, uint32 size, GLenum usage)
+{
+    this->data = (uint8*)data;
+    glGenBuffers(1, &id);
+    glBindBuffer(target, id);
+    glBufferData(target, size, data, usage);
+    glBindBuffer(target, 0);
+}
+
+void GPUBuffer::createPersistent(uint32 size, uint32 flags)
+{
+    glGenBuffers(1, &id);
+    glBindBuffer(target, id);
+
+    glBufferStorage(target, size, NULL, flags);
+    data = (uint8 *)glMapBufferRange(target, 0, size, flags);
+
+    glBindBuffer(target, 0);
 }
 
 void GPUBuffer::bind()
 {
-    glBindBuffer(type, id);
+    glBindBuffer(target, id);
 }
 
 void GPUBuffer::unbind()
 {
-    glBindBuffer(type, 0);
+    glBindBuffer(target, 0);
 }
 
-void GPUBuffer::create(void* data, GLenum usage)
+void GPUBuffer::enableVexterAttribute(GLuint index, GLint components, GLenum type, GLboolean normalized, GLsizei stride, const void* offset)
 {
-    glGenBuffers(1, &id);
-    glBindBuffer(type, id);
-    glBufferData(type, size, data, usage);
-    glBindBuffer(type, 0);
-}
-
-void GPUBuffer::update(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
-{
-    glBindBuffer(type, id);
-    glBufferSubData(target, offset, size, data);
-    glBindBuffer(type, 0);
+    bind();
+    glEnableVertexAttribArray(index);
+    glVertexAttribPointer(index, components, type, normalized, stride, offset);
+    unbind();
 }

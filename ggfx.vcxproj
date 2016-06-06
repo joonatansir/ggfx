@@ -25,14 +25,12 @@
     <ClCompile Include="ggfx\DebugUI.cpp" />
     <ClCompile Include="ggfx\Input.cpp" />
     <ClCompile Include="ggfx\Log.cpp" />
-    <ClCompile Include="ggfx\PersistentBuffer.cpp" />
     <ClCompile Include="ggfx\Shader.cpp" />
     <ClCompile Include="ggfx\ShaderEditing.cpp" />
     <ClCompile Include="ggfx\ShaderPipeline.cpp" />
     <ClCompile Include="ggfx\Texture.cpp" />
     <ClCompile Include="ggfx\util.cpp" />
     <ClCompile Include="ggfx\GLFWWindow.cpp" />
-    <ClCompile Include="ggfx\VertexBuffer.cpp" />
     <ClCompile Include="thirdparty\src\GL\gl3w.c" />
     <ClCompile Include="thirdparty\src\imgui\imgui.cpp" />
     <ClCompile Include="thirdparty\src\imgui\imgui_demo.cpp" />
@@ -47,15 +45,12 @@
     <ClInclude Include="ggfx\ggfx.h" />
     <ClInclude Include="ggfx\Input.h" />
     <ClInclude Include="ggfx\Log.h" />
-    <ClInclude Include="ggfx\PersistentBuffer.h" />
-    <ClInclude Include="ggfx\resources.h" />
     <ClInclude Include="ggfx\Shader.h" />
     <ClInclude Include="ggfx\ShaderEditing.h" />
     <ClInclude Include="ggfx\ShaderPipeline.h" />
     <ClInclude Include="ggfx\Texture.h" />
     <ClInclude Include="ggfx\types.h" />
     <ClInclude Include="ggfx\util.h" />
-    <ClInclude Include="ggfx\VertexBuffer.h" />
     <ClInclude Include="ggfx\Window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

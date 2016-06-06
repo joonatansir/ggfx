@@ -1,10 +1,10 @@
 #version 450 core
 
-out vec4 color;
-
 in vec3 coords;
 
-uniform samplerCube cubemap;
+layout (binding = 3) uniform samplerCube cubemap;
+
+out vec4 color;
 
 void main()
 {

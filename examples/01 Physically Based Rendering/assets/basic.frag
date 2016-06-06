@@ -8,12 +8,10 @@ in VS_OUT
 
 out vec4 color;
 
-uniform float time;
-uniform sampler2D sampler;
-uniform sampler2D sampler2;
-uniform samplerCube cubemapSampler;
+layout (binding = 1) uniform sampler2D sampler;
+layout (binding = 2) uniform sampler2D sampler2;
 
 void main()
 {
-	color = vec4(0.5*fs_in.normal+0.5, 1.0);
+	color = vec4(0.5*fs_in.normal+0.5, 1.0) * texture(sampler2, fs_in.textureCoord);
 }

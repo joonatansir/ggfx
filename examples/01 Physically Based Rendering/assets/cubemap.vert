@@ -7,8 +7,8 @@ out gl_PerVertex
 
 out vec3 coords;
 
-uniform mat4 view;
-uniform mat4 projection;
+layout (location = 5) uniform mat4 projection;
+layout (location = 6) uniform mat4 view;
 
 void main()
 {

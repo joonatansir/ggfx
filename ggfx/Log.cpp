@@ -49,7 +49,7 @@ void Log::drawButton(uint32& selectedBuffer, uint32 bufferId, const char* title)
     bool selected = selectedBuffer == bufferId;
 
     if(selected)
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
 
     if (ImGui::Button(title))
     {

@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Buffers">
-      <UniqueIdentifier>{171ec7db-0eaa-4116-a438-7196fd2f5c1e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Buffers">
-      <UniqueIdentifier>{185685a0-6dd3-46d1-8a23-80d7f0de15dd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\GL">
       <UniqueIdentifier>{e44cbabc-45fc-4f0e-9710-65504b52147a}</UniqueIdentifier>
     </Filter>
@@ -51,12 +45,6 @@
     <ClCompile Include="ggfx\ShaderPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ggfx\GPUBuffer.cpp">
-      <Filter>Source Files\Buffers</Filter>
-    </ClCompile>
-    <ClCompile Include="ggfx\VertexBuffer.cpp">
-      <Filter>Source Files\Buffers</Filter>
-    </ClCompile>
     <ClCompile Include="ggfx\Assets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,10 +63,10 @@
     <ClCompile Include="thirdparty\src\imgui\imgui_draw.cpp">
       <Filter>Source Files\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="ggfx\PersistentBuffer.cpp">
-      <Filter>Source Files\Buffers</Filter>
-    </ClCompile>
     <ClCompile Include="ggfx\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ggfx\GPUBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,9 +78,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ggfx\util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ggfx\resources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ggfx\App.h">
@@ -119,22 +104,16 @@
     <ClInclude Include="ggfx\ShaderPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ggfx\GPUBuffer.h">
-      <Filter>Header Files\Buffers</Filter>
-    </ClInclude>
-    <ClInclude Include="ggfx\VertexBuffer.h">
-      <Filter>Header Files\Buffers</Filter>
-    </ClInclude>
     <ClInclude Include="ggfx\Assets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ggfx\ShaderEditing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ggfx\PersistentBuffer.h">
-      <Filter>Header Files\Buffers</Filter>
-    </ClInclude>
     <ClInclude Include="ggfx\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ggfx\GPUBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,11 +4,9 @@
 
 #include "PBRApp.h"
 #include "Log.h"
-#include "resources.h"
 #include "Texture.h"
 #include "ShaderPipeline.h"
 #include "util.h"
-#include "VertexBuffer.h"
 #include "GPUBuffer.h"
 #include "Input.h"
 #include "Assets.h"
@@ -68,21 +66,15 @@ static Shader CubemapFrag;
 static Shader voxelGeom;
 static Shader voxelFrag;
 static Shader voxelVert;
+static Shader visualizeVoxelVert;
 
 static uint32 indexBufferSize;
-
-static int32 timeLocation_vs;
-static int32 timeLocation;
-static int32 samplerLocation;
-static int32 samplerLocation2;
-static int32 cubemapLocation;
-static int32 cubemapSamplerLocation;
-
-static int32 modelTransformLocation;
-static int32 viewTransformLocation;
-static int32 projectionTransformLocation;
-static int32 viewCubemap;
-static int32 projectionLoc;
+static uint32 cubeVertexBufferSize;
+static uint32 cubeIndexBufferSize;
+static GPUBuffer cubeVertexBuffer(BufferTarget::Array);
+static GPUBuffer cubeIndexBuffer(BufferTarget::Index);
+static GPUBuffer vertexBuffer(BufferTarget::Array);
+static GPUBuffer indexBuffer(BufferTarget::Index);
 
 uint32 vaos[2];
 
@@ -103,32 +95,33 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
+static int voxelGridResolution = 32;
+static int voxelGridSize = 2;
+
 static void voxelize()
 {
-    CHECK_FOR_SHADER_UPDATE(voxelGeom);
-    CHECK_FOR_SHADER_UPDATE(voxelFrag);
-    CHECK_FOR_SHADER_UPDATE(voxelVert);
-
-    glBindVertexArray(vaos[1]);
+    //glBindVertexArray(vaos[1]);
 
     pipeline.useProgramStage(voxelGeom);
     pipeline.useProgramStage(voxelFrag);
     pipeline.useProgramStage(voxelVert);
 
-    int voxelGridSize = 32;
-
+    glViewport(0, 0, voxelGridResolution, voxelGridResolution);
     glDisable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
 
-    glm::mat4 projection = glm::ortho(-5, 5, -5, 5);
-    glm::mat4 view = glm::mat4();
-    glProgramUniformMatrix4fv(basicVert.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
-    glProgramUniformMatrix4fv(basicVert.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
+    glm::mat4 orthoProj = glm::ortho(-voxelGridSize, voxelGridSize, -voxelGridSize, voxelGridSize);
+    glm::mat4 orthoView = glm::inverse(glm::translate(glm::mat4(), glm::vec3(0, 0, voxelGridSize)));
+    glProgramUniformMatrix4fv(voxelVert.id, 5, 1, GL_FALSE, &orthoProj[0][0]);
+    glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
 
-    glViewport(0, 0, voxelGridSize, voxelGridSize);
-
-    glDrawArrays(GL_TRIANGLES, 0, voxelGridSize*voxelGridSize*voxelGridSize);
+    glDrawElementsInstanced(
+        GL_TRIANGLES,
+        (GLsizei)(indexBufferSize / sizeof(uint32)),
+        GL_UNSIGNED_INT,
+        0,
+        64);
 
     pipeline.clearProgramStage(voxelVert);
     pipeline.clearProgramStage(voxelFrag);
@@ -137,6 +130,30 @@ static void voxelize()
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
+}
+
+static void visualizeVoxelGrid()
+{
+    glBindVertexArray(vaos[1]);
+    cubeVertexBuffer.bind();
+
+    pipeline.useProgramStage(visualizeVoxelVert);
+    pipeline.useProgramStage(voxelFrag);
+
+    glProgramUniformMatrix4fv(visualizeVoxelVert.id, 5, 1, GL_FALSE, &projection[0][0]);
+    glProgramUniformMatrix4fv(visualizeVoxelVert.id, 6, 1, GL_FALSE, &view[0][0]);
+    glProgramUniformMatrix4fv(visualizeVoxelVert.id, 7, 1, GL_FALSE, &glm::mat4()[0][0]);
+    glProgramUniform1i(visualizeVoxelVert.id, 8, voxelGridSize);
+    glProgramUniform1i(visualizeVoxelVert.id, 9, voxelGridResolution);
+
+    int voxels = voxelGridResolution*voxelGridResolution*voxelGridResolution;
+
+    glDrawElementsInstanced(
+        GL_TRIANGLES,
+        (GLsizei)(cubeIndexBufferSize / sizeof(uint32)),
+        GL_UNSIGNED_INT,
+        0,
+        voxels);
 
     glBindVertexArray(vaos[0]);
 }
@@ -148,8 +165,6 @@ void PBRApp::init()
     Log::info("VERTEX IMAGE UNIFORM LIMIT: %d\n", imageLimit);
 
     Assets::scanAssetDirectory("assets/");
-
-    //TODO: Remove this from here
     
     glGenVertexArrays(2, vaos);
     glBindVertexArray(vaos[0]);
@@ -168,12 +183,14 @@ void PBRApp::init()
     Texture texture = Texture::create2DFromFile(Assets::getPath("checker2.png"));
     Texture texture2 = Texture::create2DFromFile(Assets::getPath("checker.png"));
 
-    texture2.bind(2);
     vivi_color.bind(1);
+    texture2.bind(2);
     cubemap.bind(3);
 
     pipeline.create();
     pipeline2.create();
+
+    Log::info(Assets::getPath("basic.vert").c_str());
 
     basicVert.create(Assets::getPath("basic.vert"), GL_VERTEX_SHADER);
     basicFrag.create(Assets::getPath("basic.frag"), GL_FRAGMENT_SHADER);
@@ -182,6 +199,7 @@ void PBRApp::init()
     voxelGeom.create(Assets::getPath("voxel.geom"), GL_GEOMETRY_SHADER);
     voxelFrag.create(Assets::getPath("voxel.frag"), GL_FRAGMENT_SHADER);
     voxelVert.create(Assets::getPath("voxel.vert"), GL_VERTEX_SHADER);
+    visualizeVoxelVert.create(Assets::getPath("visualize_voxel.vert"), GL_VERTEX_SHADER);
 
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
@@ -193,9 +211,11 @@ void PBRApp::init()
     uint32* indices;
     uint32 vertexBufferSize;
     float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    vertexBuffer.create(dataBof, vertexBufferSize);
+    indexBuffer.create(indices, indexBufferSize);
 
-    VertexBuffer vertexBuffer(vertexBufferSize, dataBof, GL_STATIC_DRAW);
-    GPUBuffer indexBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indices, GL_STATIC_DRAW);
+    delete[] dataBof;
+    delete[] indices;
 
     vertexBuffer.bind();
     indexBuffer.bind();
@@ -205,27 +225,32 @@ void PBRApp::init()
     vertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float))); //normal
     vertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float))); //texture coord
 
-    basicVert.getUniformLocation(&timeLocation_vs, "time");
-    basicVert.getUniformLocation(&modelTransformLocation, "model");
-    basicVert.getUniformLocation(&viewTransformLocation, "view");
-    basicVert.getUniformLocation(&projectionTransformLocation, "projection");
+    glBindVertexArray(vaos[1]);
 
-    basicFrag.getUniformLocation(&timeLocation, "time");
-    basicFrag.getUniformLocation(&samplerLocation, "sampler");
-    basicFrag.getUniformLocation(&samplerLocation2, "sampler2");
-    basicFrag.getUniformLocation(&cubemapSamplerLocation, "cubemapSampler");
+    dataBof = loadBOF(Assets::getPath("unit_cube.bof"), &indices, &cubeVertexBufferSize, &cubeIndexBufferSize);
+    cubeVertexBuffer.create(dataBof, cubeVertexBufferSize);
+    cubeIndexBuffer.create(indices, cubeIndexBufferSize);
 
-    CubemapFrag.getUniformLocation(&cubemapLocation, "cubemap");
-    CubemapVert.getUniformLocation(&viewCubemap, "view");
-    CubemapVert.getUniformLocation(&projectionLoc, "projection");
+    cubeVertexBuffer.bind();
+    cubeIndexBuffer.bind();
+
+    cubeVertexBuffer.enableVexterAttribute(0, 3, GL_FLOAT, false, stride, 0);                           //position
+    cubeVertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float))); //normal
+    cubeVertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float))); //texture coord
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void PBRApp::update(float dt)
 {
     CHECK_FOR_SHADER_UPDATE(basicVert);
     CHECK_FOR_SHADER_UPDATE(basicFrag);
+    CHECK_FOR_SHADER_UPDATE(voxelGeom);
+    CHECK_FOR_SHADER_UPDATE(voxelFrag);
+    CHECK_FOR_SHADER_UPDATE(voxelVert);
+    CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
 
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -292,19 +317,22 @@ void PBRApp::render(float dt)
         ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
         ImGui::End();
     }
+    {
+        ImGui::Begin("Voxels");
+        ImGui::Text("%dx%dx%d - %d", 
+            voxelGridResolution,
+            voxelGridResolution,
+            voxelGridResolution,
+            voxelGridResolution*voxelGridResolution*voxelGridResolution);
+        ImGui::End();
+    }
 
-    glProgramUniformMatrix4fv(basicVert.id, modelTransformLocation, 1, GL_FALSE, &world[0][0]);
-    glProgramUniformMatrix4fv(basicVert.id, viewTransformLocation, 1, GL_FALSE, &view[0][0]);
-    glProgramUniformMatrix4fv(basicVert.id, projectionTransformLocation, 1, GL_FALSE, &projection[0][0]);
-    glProgramUniform1f(basicVert.id, timeLocation_vs, (float)getTime());
-    glProgramUniform1f(basicFrag.id, timeLocation, (float)getTime());
-    glProgramUniform1i(basicFrag.id, samplerLocation, 1);
-    glProgramUniform1i(basicFrag.id, samplerLocation2, 2);
-    glProgramUniform1i(basicFrag.id, cubemapSamplerLocation, 3);
+    glProgramUniformMatrix4fv(basicVert.id, 7, 1, GL_FALSE, &world[0][0]);
+    glProgramUniformMatrix4fv(basicVert.id, 6, 1, GL_FALSE, &view[0][0]);
+    glProgramUniformMatrix4fv(basicVert.id, 5, 1, GL_FALSE, &projection[0][0]);
 
-    glProgramUniform1i(CubemapFrag.id, cubemapLocation, 3);
-    glProgramUniformMatrix4fv(CubemapVert.id, viewCubemap, 1, GL_FALSE, &view[0][0]);
-    glProgramUniformMatrix4fv(CubemapVert.id, projectionLoc, 1, GL_FALSE, &projection[0][0]);
+    glProgramUniformMatrix4fv(CubemapVert.id, 5, 1, GL_FALSE, &projection[0][0]);
+    glProgramUniformMatrix4fv(CubemapVert.id, 6, 1, GL_FALSE, &view[0][0]);
 
     glBindProgramPipeline(pipeline2.id);
 
@@ -321,6 +349,8 @@ void PBRApp::render(float dt)
     pipeline.useProgramStage(basicFrag);
 
     glBindVertexArray(vaos[0]);
+    vertexBuffer.bind();
+    indexBuffer.bind();
 
     //model
     glDrawElementsInstanced(
@@ -330,7 +360,8 @@ void PBRApp::render(float dt)
         0,
         1);
 
-    voxelize();
+    visualizeVoxelGrid();
+    //voxelize();
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
