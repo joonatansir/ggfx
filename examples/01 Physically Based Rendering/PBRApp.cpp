@@ -67,6 +67,7 @@ static Shader voxelGeom;
 static Shader voxelFrag;
 static Shader voxelVert;
 static Shader visualizeVoxelVert;
+static Shader visualizeVoxelFrag;
 
 static uint32 indexBufferSize;
 static uint32 cubeVertexBufferSize;
@@ -77,6 +78,8 @@ static GPUBuffer vertexBuffer(BufferTarget::Array);
 static GPUBuffer indexBuffer(BufferTarget::Index);
 
 uint32 vaos[2];
+
+static glm::ivec2 windowSize;
 
 //Object
 static float scaleAmount = 1.0f;
@@ -95,38 +98,42 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
-static int voxelGridResolution = 32;
+static GLuint voxelTexture;
+static int voxelGridResolution = 10;
 static int voxelGridSize = 2;
 
-static void voxelize()
+static void voxelize(int32 windowWidth, int32 windowHeight)
 {
-    //glBindVertexArray(vaos[1]);
-
     pipeline.useProgramStage(voxelGeom);
+    pipeline.clearProgramStage(voxelGeom);
     pipeline.useProgramStage(voxelFrag);
     pipeline.useProgramStage(voxelVert);
 
     glViewport(0, 0, voxelGridResolution, voxelGridResolution);
-    glDisable(GL_DEPTH_TEST);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
+    //glDisable(GL_DEPTH_TEST);
+    //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    //glDepthMask(GL_FALSE);
 
-    glm::mat4 orthoProj = glm::ortho(-voxelGridSize, voxelGridSize, -voxelGridSize, voxelGridSize);
-    glm::mat4 orthoView = glm::inverse(glm::translate(glm::mat4(), glm::vec3(0, 0, voxelGridSize)));
+    float halfGridSize = voxelGridSize / 2.0f;
+    glm::mat4 orthoProj = glm::ortho(-halfGridSize, halfGridSize, -halfGridSize, halfGridSize);
+    glm::mat4 orthoView = glm::inverse(glm::translate(glm::mat4(), glm::vec3(0, 0, halfGridSize)));
     glProgramUniformMatrix4fv(voxelVert.id, 5, 1, GL_FALSE, &orthoProj[0][0]);
     glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
+    glProgramUniformMatrix4fv(voxelVert.id, 7, 1, GL_FALSE, &glm::mat4()[0][0]);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(indexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
-        64);
+        1);
 
     pipeline.clearProgramStage(voxelVert);
     pipeline.clearProgramStage(voxelFrag);
     pipeline.clearProgramStage(voxelGeom);
 
+    glViewport(0, 0, windowWidth, windowHeight);
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
@@ -138,22 +145,25 @@ static void visualizeVoxelGrid()
     cubeVertexBuffer.bind();
 
     pipeline.useProgramStage(visualizeVoxelVert);
-    pipeline.useProgramStage(voxelFrag);
+    pipeline.useProgramStage(visualizeVoxelFrag);
 
     glProgramUniformMatrix4fv(visualizeVoxelVert.id, 5, 1, GL_FALSE, &projection[0][0]);
     glProgramUniformMatrix4fv(visualizeVoxelVert.id, 6, 1, GL_FALSE, &view[0][0]);
     glProgramUniformMatrix4fv(visualizeVoxelVert.id, 7, 1, GL_FALSE, &glm::mat4()[0][0]);
     glProgramUniform1i(visualizeVoxelVert.id, 8, voxelGridSize);
     glProgramUniform1i(visualizeVoxelVert.id, 9, voxelGridResolution);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-    int voxels = voxelGridResolution*voxelGridResolution*voxelGridResolution;
+    int voxelCount = voxelGridResolution*voxelGridResolution*voxelGridResolution;
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(cubeIndexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
-        voxels);
+        voxelCount);
 
     glBindVertexArray(vaos[0]);
 }
@@ -163,6 +173,8 @@ void PBRApp::init()
     int32 imageLimit;
     glGetIntegerv(GL_MAX_VERTEX_IMAGE_UNIFORMS, &imageLimit);
     Log::info("VERTEX IMAGE UNIFORM LIMIT: %d\n", imageLimit);
+
+    windowSize = window->getSize();
 
     Assets::scanAssetDirectory("assets/");
     
@@ -200,6 +212,7 @@ void PBRApp::init()
     voxelFrag.create(Assets::getPath("voxel.frag"), GL_FRAGMENT_SHADER);
     voxelVert.create(Assets::getPath("voxel.vert"), GL_VERTEX_SHADER);
     visualizeVoxelVert.create(Assets::getPath("visualize_voxel.vert"), GL_VERTEX_SHADER);
+    visualizeVoxelFrag.create(Assets::getPath("visualize_voxel.frag"), GL_FRAGMENT_SHADER);
 
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
@@ -238,6 +251,12 @@ void PBRApp::init()
     cubeVertexBuffer.enableVexterAttribute(1, 3, GL_FLOAT, false, stride, (void *)(3 * sizeof(float))); //normal
     cubeVertexBuffer.enableVexterAttribute(2, 2, GL_FLOAT, false, stride, (void *)(6 * sizeof(float))); //texture coord
 
+    //Voxelization
+    glGenTextures(1, &voxelTexture);
+    glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -251,6 +270,7 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(voxelFrag);
     CHECK_FOR_SHADER_UPDATE(voxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
+    CHECK_FOR_SHADER_UPDATE(visualizeVoxelFrag);
 
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -290,7 +310,7 @@ void PBRApp::update(float dt)
 
 void PBRApp::render(float dt)
 {
-    glViewport(0, 0, window->getSize().x, window->getSize().y);
+    glViewport(0, 0, windowSize.x, windowSize.y);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
@@ -350,7 +370,6 @@ void PBRApp::render(float dt)
 
     glBindVertexArray(vaos[0]);
     vertexBuffer.bind();
-    indexBuffer.bind();
 
     //model
     glDrawElementsInstanced(
@@ -360,8 +379,8 @@ void PBRApp::render(float dt)
         0,
         1);
 
+    voxelize(windowSize.x, windowSize.y);
     visualizeVoxelGrid();
-    //voxelize();
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
