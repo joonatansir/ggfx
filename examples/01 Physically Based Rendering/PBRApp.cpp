@@ -98,13 +98,57 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
+struct GPUQuery
+{
+    GLuint queryBegin = 0;
+    GLuint queryEnd = 0;
+    float timeElapsed = 0.0f;
+
+    void create()
+    {
+        glGenQueries(1, &queryBegin);
+        glGenQueries(1, &queryEnd);
+    }
+
+    void begin()
+    {
+        if (queryBegin == 0 || queryEnd == 0)
+            create();
+
+        glQueryCounter(queryBegin, GL_TIMESTAMP);
+    }
+
+    void end()
+    {
+        glQueryCounter(queryEnd, GL_TIMESTAMP);
+
+        int64 beginTimestamp;
+        int64 endTimestamp;
+
+        glGetQueryObjecti64v(queryBegin, GL_QUERY_RESULT, &beginTimestamp);
+        glGetQueryObjecti64v(queryEnd, GL_QUERY_RESULT, &endTimestamp);
+        timeElapsed = (endTimestamp - beginTimestamp) / 1000000.0f;
+    }
+
+    float getTime()
+    {
+        return timeElapsed;
+    }
+};
+
+static GPUQuery queryVoxelVisualization;
+static GPUQuery queryVoxelization;
+static GPUQuery queryFrame;
+
 //voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 64;
+static int voxelGridResolution = 100;
 static int voxelGridSize = 3;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
+    queryVoxelization.begin();
+
     pipeline.useProgramStage(voxelGeom);
     pipeline.clearProgramStage(voxelGeom);
     pipeline.useProgramStage(voxelFrag);
@@ -140,7 +184,9 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
+
+    queryVoxelization.end();
 }
 
 static void visualizeVoxelGrid()
@@ -232,7 +278,7 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("dr.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("vivi.bof"), &indices, &vertexBufferSize, &indexBufferSize);
     vertexBuffer.create(dataBof, vertexBufferSize);
     indexBuffer.create(indices, indexBufferSize);
 
@@ -283,7 +329,7 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelFrag);
 
-    pos.y = sin(time);
+    //pos.y = sin(time);
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
     world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotation);
@@ -322,6 +368,10 @@ void PBRApp::update(float dt)
 
 void PBRApp::render(float dt)
 {
+    static bool visualizeVoxels = true;
+
+    queryFrame.begin();
+
     glViewport(0, 0, windowSize.x, windowSize.y);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -332,41 +382,6 @@ void PBRApp::render(float dt)
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    const int32 frames = 100;
-    static float averageFrameRate = 0.0f;
-    static float rollingFrametimeCounter[frames] = { 0.0f };
-    static int32 currentFrame = 0;
-    averageFrameRate += dt - rollingFrametimeCounter[currentFrame];
-    rollingFrametimeCounter[currentFrame] = dt;
-    currentFrame = ++currentFrame % frames;
-
-    static float time = 0;
-    time += dt;
-
-    ui.update(window);
-
-    {
-        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
-        ImGui::Begin("Stats", 0, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-        ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
-        ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
-        ImGui::Text("%.1f", time);
-        ImGui::End();
-    }
-
-    static bool visualizeVoxels = true;
-    {
-        ImGui::Begin("Voxels");
-        ImGui::Text("%dx%dx%d - %d", 
-            voxelGridResolution,
-            voxelGridResolution,
-            voxelGridResolution,
-            voxelGridResolution*voxelGridResolution*voxelGridResolution);
-        ImGui::Checkbox("Visualize", &visualizeVoxels);
-        if (ImGui::Button("Clear"))
-            clearVoxels();
-        ImGui::End();
-    }
 
     glProgramUniformMatrix4fv(basicVert.id, 7, 1, GL_FALSE, &world[0][0]);
     glProgramUniformMatrix4fv(basicVert.id, 6, 1, GL_FALSE, &view[0][0]);
@@ -386,7 +401,6 @@ void PBRApp::render(float dt)
 
     glBindProgramPipeline(pipeline.id);
 
-
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
 
@@ -403,10 +417,52 @@ void PBRApp::render(float dt)
 
     voxelize(windowSize.x, windowSize.y);
 
+    queryVoxelVisualization.begin();
     if (visualizeVoxels)
         visualizeVoxelGrid();
+    queryVoxelVisualization.end();
 
     clearVoxels();
+
+    queryFrame.end();
+
+    const int32 frames = 100;
+    static float averageFrameRate = 0.0f;
+    static float rollingFrametimeCounter[frames] = { 0.0f };
+    static int32 currentFrame = 0;
+    averageFrameRate += dt - rollingFrametimeCounter[currentFrame];
+    rollingFrametimeCounter[currentFrame] = dt;
+    currentFrame = ++currentFrame % frames;
+
+    static float time = 0;
+    time += dt;
+
+    ui.update(window);
+
+    {
+        ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
+        ImGui::Begin("Stats", 0, ImVec2(300, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+        ImGui::Text("GPU Frame Time %.1f ms", queryFrame.getTime());
+        ImGui::Text("  Voxelization %.1f ms", queryVoxelization.getTime());
+        ImGui::Text("  Voxel Draw %.1f ms", queryVoxelVisualization.getTime());
+        //ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
+        //ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
+        ImGui::Text("%.1f s", time);
+        ImGui::End();
+    }
+
+    {
+        ImGui::Begin("Voxels");
+        ImGui::Text("%dx%dx%d - %d",
+            voxelGridResolution,
+            voxelGridResolution,
+            voxelGridResolution,
+            voxelGridResolution*voxelGridResolution*voxelGridResolution);
+        ImGui::Checkbox("Visualize", &visualizeVoxels);
+        if (ImGui::Button("Clear"))
+            clearVoxels();
+        ImGui::End();
+    }
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());

@@ -16,10 +16,10 @@ out vec4 voxelColor;
 
 void main()
 {
-  ivec3 c = ivec3(gl_InstanceID % gridResolution, 
+  vec3 c = vec3(gl_InstanceID % gridResolution, 
                 (gl_InstanceID % (gridResolution*gridResolution)) / gridResolution,
                 gl_InstanceID / (gridResolution*gridResolution));
-  voxelColor = imageLoad(voxelTexture, c);
+  voxelColor = imageLoad(voxelTexture, vec3(c));
 
   float scale = float(gridSize) / gridResolution;
   float gridStartPosition = gridSize / 2.0 - scale / 2.0;

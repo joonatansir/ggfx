@@ -5,6 +5,7 @@ out vec4 color;
 
 void main()
 {
+  if(voxelColor.a < 0.01)
+    discard;
   color = voxelColor;
-  gl_FragDepth = 1.0 - voxelColor.a;
 }
