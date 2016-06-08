@@ -13,8 +13,6 @@
 
 #include "types.h"
 
-#define GGASSERT(x) if(!(x)){} 
-
 #define COUNT(x) (sizeof(x)/sizeof(x[0]))
 
 namespace ggfx

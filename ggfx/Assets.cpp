@@ -43,7 +43,7 @@ std::string& ggfx::Assets::getPath(const std::string& assetName)
     auto asset = assets.find(assetName);
     if (asset == assets.end())
     {
-        Log::warning("Asset not found! - %s\n", assetName);
+        assert(0); //Filename not found!
         return std::string("");
     }
     return asset->second;

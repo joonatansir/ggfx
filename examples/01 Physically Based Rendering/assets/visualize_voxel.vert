@@ -24,7 +24,7 @@ void main()
   float scale = float(gridSize) / gridResolution;
   float gridStartPosition = gridSize / 2.0 - scale / 2.0;
   float x = -gridStartPosition + scale * c.x;
-  float y = gridStartPosition - scale * c.y;
+  float y = -gridStartPosition + scale * c.y;
   float z = gridStartPosition - scale * c.z;
   vec4 pos = vec4(x, y, z, 1.0);
   mat4 m = model;

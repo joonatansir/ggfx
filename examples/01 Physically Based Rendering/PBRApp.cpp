@@ -98,9 +98,10 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
+//voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 10;
-static int voxelGridSize = 2;
+static int voxelGridResolution = 64;
+static int voxelGridSize = 3;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
@@ -110,16 +111,18 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     pipeline.useProgramStage(voxelVert);
 
     glViewport(0, 0, voxelGridResolution, voxelGridResolution);
-    //glDisable(GL_DEPTH_TEST);
-    //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    //glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
 
     float halfGridSize = voxelGridSize / 2.0f;
-    glm::mat4 orthoProj = glm::ortho(-halfGridSize, halfGridSize, -halfGridSize, halfGridSize);
+    glm::mat4 orthoProj = glm::ortho(-halfGridSize, halfGridSize, -halfGridSize, halfGridSize, 0.0f, (float)voxelGridSize);
     glm::mat4 orthoView = glm::inverse(glm::translate(glm::mat4(), glm::vec3(0, 0, halfGridSize)));
     glProgramUniformMatrix4fv(voxelVert.id, 5, 1, GL_FALSE, &orthoProj[0][0]);
     glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
-    glProgramUniformMatrix4fv(voxelVert.id, 7, 1, GL_FALSE, &glm::mat4()[0][0]);
+    glProgramUniformMatrix4fv(voxelVert.id, 7, 1, GL_FALSE, &world[0][0]);
+    glProgramUniform1i(voxelFrag.id, 9, voxelGridResolution);
     glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 
     glDrawElementsInstanced(
@@ -137,6 +140,7 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glEnable(GL_DEPTH_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
+    glDisable(GL_CULL_FACE);
 }
 
 static void visualizeVoxelGrid()
@@ -166,6 +170,13 @@ static void visualizeVoxelGrid()
         voxelCount);
 
     glBindVertexArray(vaos[0]);
+}
+
+static void clearVoxels()
+{
+    glDeleteTextures(1, &voxelTexture);
+    glCreateTextures(GL_TEXTURE_3D, 1, &voxelTexture);
+    glTextureStorage3D(voxelTexture, 1, GL_RGBA32F, voxelGridResolution, voxelGridResolution, voxelGridResolution);
 }
 
 void PBRApp::init()
@@ -202,8 +213,6 @@ void PBRApp::init()
     pipeline.create();
     pipeline2.create();
 
-    Log::info(Assets::getPath("basic.vert").c_str());
-
     basicVert.create(Assets::getPath("basic.vert"), GL_VERTEX_SHADER);
     basicFrag.create(Assets::getPath("basic.frag"), GL_FRAGMENT_SHADER);
     CubemapVert.create(Assets::getPath("cubemap.vert"), GL_VERTEX_SHADER);
@@ -223,7 +232,7 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("dr.bof"), &indices, &vertexBufferSize, &indexBufferSize);
     vertexBuffer.create(dataBof, vertexBufferSize);
     indexBuffer.create(indices, indexBufferSize);
 
@@ -254,8 +263,7 @@ void PBRApp::init()
     //Voxelization
     glGenTextures(1, &voxelTexture);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
-    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, voxelGridResolution, voxelGridResolution, voxelGridResolution);
-    glBindTexture(GL_TEXTURE_3D, 0);
+    glTextureStorage3D(voxelTexture, 1, GL_RGBA32F, voxelGridResolution, voxelGridResolution, voxelGridResolution);
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glEnable(GL_BLEND);
@@ -264,6 +272,9 @@ void PBRApp::init()
 
 void PBRApp::update(float dt)
 {
+    static float time = 0.0f;
+    time += dt;
+
     CHECK_FOR_SHADER_UPDATE(basicVert);
     CHECK_FOR_SHADER_UPDATE(basicFrag);
     CHECK_FOR_SHADER_UPDATE(voxelGeom);
@@ -272,6 +283,7 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelFrag);
 
+    pos.y = sin(time);
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
     world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotation);
@@ -328,15 +340,21 @@ void PBRApp::render(float dt)
     rollingFrametimeCounter[currentFrame] = dt;
     currentFrame = ++currentFrame % frames;
 
+    static float time = 0;
+    time += dt;
+
     ui.update(window);
 
     {
         ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
         ImGui::Begin("Stats", 0, ImVec2(0, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
         ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
-        ImGui::Text("mouse x: %f, y: %f", Input::mousePosition.x, Input::mousePosition.y);
+        ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
+        ImGui::Text("%.1f", time);
         ImGui::End();
     }
+
+    static bool visualizeVoxels = true;
     {
         ImGui::Begin("Voxels");
         ImGui::Text("%dx%dx%d - %d", 
@@ -344,6 +362,9 @@ void PBRApp::render(float dt)
             voxelGridResolution,
             voxelGridResolution,
             voxelGridResolution*voxelGridResolution*voxelGridResolution);
+        ImGui::Checkbox("Visualize", &visualizeVoxels);
+        if (ImGui::Button("Clear"))
+            clearVoxels();
         ImGui::End();
     }
 
@@ -361,9 +382,10 @@ void PBRApp::render(float dt)
     pipeline2.useProgramStage(CubemapFrag);
 
     //cubemap
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindProgramPipeline(pipeline.id);
+
 
     pipeline.useProgramStage(basicVert);
     pipeline.useProgramStage(basicFrag);
@@ -380,7 +402,11 @@ void PBRApp::render(float dt)
         1);
 
     voxelize(windowSize.x, windowSize.y);
-    visualizeVoxelGrid();
+
+    if (visualizeVoxels)
+        visualizeVoxelGrid();
+
+    clearVoxels();
 
     ImGui::Render();
     ui.render(ImGui::GetDrawData());
