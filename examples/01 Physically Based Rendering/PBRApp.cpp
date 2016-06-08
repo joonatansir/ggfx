@@ -142,7 +142,7 @@ static GPUQuery queryFrame;
 
 //voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 100;
+static int voxelGridResolution = 32;
 static int voxelGridSize = 3;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
