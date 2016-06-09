@@ -32,7 +32,7 @@ void Log::error(const char* str, ...)
     log->scrollToBottom = true;
 }
 
-void Log::warning(const char * str, ...)
+void Log::spam(const char * str, ...)
 {
     Log* log = getInstance();
 

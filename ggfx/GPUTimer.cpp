@@ -1,6 +1,14 @@
+#include "Log.h"
+
 #include "GPUTimer.h"
 
 using namespace ggfx;
+
+GPUTimer::~GPUTimer()
+{
+    glDeleteQueries(1, &queryBegin);
+    glDeleteQueries(1, &queryEnd);
+}
 
 void GPUTimer::create()
 {
@@ -22,7 +30,6 @@ void GPUTimer::end()
 
     int64 beginTimestamp;
     int64 endTimestamp;
-
     glGetQueryObjecti64v(queryBegin, GL_QUERY_RESULT, &beginTimestamp);
     glGetQueryObjecti64v(queryEnd, GL_QUERY_RESULT, &endTimestamp);
     timeElapsed = (endTimestamp - beginTimestamp) / 1000000.0f;

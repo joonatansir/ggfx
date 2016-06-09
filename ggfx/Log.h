@@ -12,7 +12,7 @@ namespace ggfx
 
         static void info(const char* string, ...);
         static void error(const char* string, ...);
-        static void warning(const char* string, ...);
+        static void spam(const char* string, ...);
         static void draw();
 
     private:
@@ -22,7 +22,7 @@ namespace ggfx
         static Log* getInstance();
         void drawButton(uint32& selectedBuffer, uint32 bufferId, const char* title);
 
-        ImGuiTextBuffer buffers[3]; //0: info buffer, 1: warning buffer, 2: error buffer
+        ImGuiTextBuffer buffers[3]; //0: info buffer, 1: spam buffer, 2: error buffer
         bool scrollToBottom;
     };
 }

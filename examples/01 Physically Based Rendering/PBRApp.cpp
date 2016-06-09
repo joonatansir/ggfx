@@ -99,19 +99,13 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
-static GPUTimer queryVoxelVisualization;
-static GPUTimer queryVoxelization;
-static GPUTimer queryFrame;
-
 //voxel stuff
 static GLuint voxelTexture;
 static int voxelGridResolution = 64;
-static int voxelGridSize = 3;
+static int voxelGridSize = 5;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
-    queryVoxelization.begin();
-
     pipeline.useProgramStage(voxelGeom);
     pipeline.clearProgramStage(voxelGeom);
     pipeline.useProgramStage(voxelFrag);
@@ -148,9 +142,9 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
-
-    queryVoxelization.end();
 }
+
+static float vvd;
 
 static void visualizeVoxelGrid()
 {
@@ -171,12 +165,16 @@ static void visualizeVoxelGrid()
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+    GPU_TIMER_START(vvd);
     glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(cubeIndexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
         voxelCount);
+    GPU_TIMER_END(vvd);
+
+    vvd = GPU_TIMER_GET(vvd);
 
     glBindVertexArray(vaos[0]);
 }
@@ -333,7 +331,7 @@ void PBRApp::render(float dt)
 {
     static bool visualizeVoxels = true;
 
-    queryFrame.begin();
+    GPU_TIMER_START(frame);
 
     glViewport(0, 0, windowSize.x, windowSize.y);
     glEnable(GL_DEPTH_TEST);
@@ -344,7 +342,6 @@ void PBRApp::render(float dt)
     //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
     glProgramUniformMatrix4fv(basicVert.id, 7, 1, GL_FALSE, &world[0][0]);
     glProgramUniformMatrix4fv(basicVert.id, 6, 1, GL_FALSE, &view[0][0]);
@@ -370,24 +367,27 @@ void PBRApp::render(float dt)
     glBindVertexArray(vaos[0]);
     vertexBuffer.bind();
 
-    //model
-    glDrawElementsInstanced(
-        GL_TRIANGLES,
-        (GLsizei)(indexBufferSize / sizeof(uint32)),
-        GL_UNSIGNED_INT,
-        0,
-        1);
+    GPU_TIMER_START(model);
+        glDrawElementsInstanced(
+            GL_TRIANGLES,
+            (GLsizei)(indexBufferSize / sizeof(uint32)),
+            GL_UNSIGNED_INT,
+            0,
+            1);
+    GPU_TIMER_END(model);
 
+    GPU_TIMER_START(voxelize);
     voxelize(windowSize.x, windowSize.y);
+    GPU_TIMER_END(voxelize);
 
-    queryVoxelVisualization.begin();
+    GPU_TIMER_START(visualize);
     if (visualizeVoxels)
         visualizeVoxelGrid();
-    queryVoxelVisualization.end();
+    GPU_TIMER_END(visualize);
 
     clearVoxels();
 
-    queryFrame.end();
+    GPU_TIMER_END(frame);
 
     const int32 frames = 100;
     static float averageFrameRate = 0.0f;
@@ -403,11 +403,15 @@ void PBRApp::render(float dt)
     ui.update(window);
 
     {
+        float panelWidth = 300.0f;
         ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
-        ImGui::Begin("Stats", 0, ImVec2(300, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-        ImGui::Text("GPU Frame Time %.1f ms", queryFrame.getTime());
-        ImGui::Text("  Voxelization %.1f ms", queryVoxelization.getTime());
-        ImGui::Text("  Voxel Draw %.1f ms", queryVoxelVisualization.getTime());
+        ImGui::Begin("Stats", 0, ImVec2(panelWidth, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+        ImGui::ProgressBar(GPU_TIMER_GET(frame) / 16.666f, ImVec2(-1.0f, 3.0f), "");
+        ImGui::Text("GPU Frame Time %.2f ms", GPU_TIMER_GET(frame));
+        ImGui::Text("  Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
+        ImGui::Text("  Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
+        ImGui::Text("  Voxel Draw Only %.2f ms", vvd);
+        ImGui::Text("  Model Draw %.2f ms", GPU_TIMER_GET(model));
         //ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
         //ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
         ImGui::Text("%.1f s", time);
