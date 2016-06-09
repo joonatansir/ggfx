@@ -26,7 +26,7 @@ void Assets::scanAssetDirectory(const std::string& path, const std::string& dire
                 }
                 else
                 {
-                    Log::info("%s - %d\n", entry->d_name, entry->d_type);
+                    LOG(info, "%s - %d\n", entry->d_name, entry->d_type);
                   
                     std::string filename(entry->d_name);
                     assets[directory + filename] = path + filename;

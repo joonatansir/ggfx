@@ -61,7 +61,7 @@ void Shader::getUniformLocation(GLint* uniformLocation, char* name)
 {
     if (uniformCount >= 16)
     {
-        Log::error("Max uniforms exceeded!");
+        LOG(error, "Max uniforms exceeded!");
         return;
     }
 
@@ -73,7 +73,7 @@ void Shader::getUniformLocation(GLint* uniformLocation, char* name)
 
 void Shader::recompile()
 {
-    Log::info("recompiling %s!\n", info.filename.c_str());
+    LOG(info, "recompiling %s!\n", info.filename.c_str());
 
     glDeleteProgram(id);
     create(info.filename, type);

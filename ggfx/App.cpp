@@ -16,9 +16,9 @@ static void APIENTRY printCallback(
     const GLchar* message, 
     const void* userParam) 
 { 
-    Log::error("OPENGL ERROR id %d: ", id);
-    Log::error(message);
-    Log::error("\n");
+    LOG(error, "OPENGL ERROR id %d: ", id);
+    LOG(error, message);
+    LOG(error, "\n");
 }
 
 App::App(uint32 width, uint32 height, const char* title) :

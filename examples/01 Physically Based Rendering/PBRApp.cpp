@@ -188,10 +188,6 @@ static void clearVoxels()
 
 void PBRApp::init()
 {
-    int32 imageLimit;
-    glGetIntegerv(GL_MAX_VERTEX_IMAGE_UNIFORMS, &imageLimit);
-    Log::info("VERTEX IMAGE UNIFORM LIMIT: %d\n", imageLimit);
-
     windowSize = window->getSize();
 
     Assets::scanAssetDirectory("assets/");

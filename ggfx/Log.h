@@ -25,4 +25,10 @@ namespace ggfx
         ImGuiTextBuffer buffers[3]; //0: info buffer, 1: spam buffer, 2: error buffer
         bool scrollToBottom;
     };
+
+    #if defined(_DEBUG)
+        #define LOG(type, message, ...) Log::##type(message, __VA_ARGS__)
+    #else
+        #define LOG(message, type)
+    #endif
 }
