@@ -12,6 +12,7 @@
 #include "Assets.h"
 #include "ShaderEditing.h"
 #include "Shader.h"
+#include "GPUTimer.h"
 
 //TODO: remove this
 #include "GLFWWindow.h"
@@ -98,51 +99,13 @@ static glm::mat4 world;
 
 static glm::vec2 lastCursorPosition;
 
-struct GPUQuery
-{
-    GLuint queryBegin = 0;
-    GLuint queryEnd = 0;
-    float timeElapsed = 0.0f;
-
-    void create()
-    {
-        glGenQueries(1, &queryBegin);
-        glGenQueries(1, &queryEnd);
-    }
-
-    void begin()
-    {
-        if (queryBegin == 0 || queryEnd == 0)
-            create();
-
-        glQueryCounter(queryBegin, GL_TIMESTAMP);
-    }
-
-    void end()
-    {
-        glQueryCounter(queryEnd, GL_TIMESTAMP);
-
-        int64 beginTimestamp;
-        int64 endTimestamp;
-
-        glGetQueryObjecti64v(queryBegin, GL_QUERY_RESULT, &beginTimestamp);
-        glGetQueryObjecti64v(queryEnd, GL_QUERY_RESULT, &endTimestamp);
-        timeElapsed = (endTimestamp - beginTimestamp) / 1000000.0f;
-    }
-
-    float getTime()
-    {
-        return timeElapsed;
-    }
-};
-
-static GPUQuery queryVoxelVisualization;
-static GPUQuery queryVoxelization;
-static GPUQuery queryFrame;
+static GPUTimer queryVoxelVisualization;
+static GPUTimer queryVoxelization;
+static GPUTimer queryFrame;
 
 //voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 32;
+static int voxelGridResolution = 64;
 static int voxelGridSize = 3;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)

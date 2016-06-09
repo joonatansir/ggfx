@@ -23,6 +23,7 @@
     <ClCompile Include="ggfx\Assets.cpp" />
     <ClCompile Include="ggfx\GPUBuffer.cpp" />
     <ClCompile Include="ggfx\DebugUI.cpp" />
+    <ClCompile Include="ggfx\GPUTimer.cpp" />
     <ClCompile Include="ggfx\Input.cpp" />
     <ClCompile Include="ggfx\Log.cpp" />
     <ClCompile Include="ggfx\Shader.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="ggfx\GPUBuffer.h" />
     <ClInclude Include="ggfx\DebugUI.h" />
     <ClInclude Include="ggfx\ggfx.h" />
+    <ClInclude Include="ggfx\GPUTimer.h" />
     <ClInclude Include="ggfx\Input.h" />
     <ClInclude Include="ggfx\Log.h" />
     <ClInclude Include="ggfx\Shader.h" />
