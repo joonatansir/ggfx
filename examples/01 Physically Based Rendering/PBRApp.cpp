@@ -1,4 +1,4 @@
-#include <glm/glm.hpp>
+﻿#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -102,12 +102,11 @@ static glm::vec2 lastCursorPosition;
 //voxel stuff
 static GLuint voxelTexture;
 static int voxelGridResolution = 64;
-static int voxelGridSize = 5;
+static int voxelGridSize = 4;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
     pipeline.useProgramStage(voxelGeom);
-    pipeline.clearProgramStage(voxelGeom);
     pipeline.useProgramStage(voxelFrag);
     pipeline.useProgramStage(voxelVert);
 
@@ -144,8 +143,6 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glEnable(GL_CULL_FACE);
 }
 
-static float vvd;
-
 static void visualizeVoxelGrid()
 {
     glBindVertexArray(vaos[1]);
@@ -165,16 +162,12 @@ static void visualizeVoxelGrid()
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    GPU_TIMER_START(vvd);
     glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(cubeIndexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
         voxelCount);
-    GPU_TIMER_END(vvd);
-
-    vvd = GPU_TIMER_GET(vvd);
 
     glBindVertexArray(vaos[0]);
 }
@@ -286,7 +279,7 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelFrag);
 
-    //pos.y = sin(time);
+    pos.y = -1.0f;
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
     world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotation);
@@ -326,6 +319,7 @@ void PBRApp::update(float dt)
 void PBRApp::render(float dt)
 {
     static bool visualizeVoxels = true;
+    static bool showModel = true;
 
     GPU_TIMER_START(frame);
 
@@ -364,6 +358,7 @@ void PBRApp::render(float dt)
     vertexBuffer.bind();
 
     GPU_TIMER_START(model);
+    if(showModel)
         glDrawElementsInstanced(
             GL_TRIANGLES,
             (GLsizei)(indexBufferSize / sizeof(uint32)),
@@ -399,18 +394,17 @@ void PBRApp::render(float dt)
     ui.update(window);
 
     {
-        float panelWidth = 300.0f;
+        float panelWidth = 250.0f;
         ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
         ImGui::Begin("Stats", 0, ImVec2(panelWidth, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-        ImGui::ProgressBar(GPU_TIMER_GET(frame) / 16.666f, ImVec2(-1.0f, 3.0f), "");
-        ImGui::Text("GPU Frame Time %.2f ms", GPU_TIMER_GET(frame));
-        ImGui::Text("  Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
-        ImGui::Text("  Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
-        ImGui::Text("  Voxel Draw Only %.2f ms", vvd);
-        ImGui::Text("  Model Draw %.2f ms", GPU_TIMER_GET(model));
+        ImGui::ProgressBar(GPU_TIMER_GET(frame) / 16.666f, ImVec2(-1.0f, 5.0f), "");
+        ImGui::Text("\nGPU Frame Time %.2f ms", GPU_TIMER_GET(frame));
+        ImGui::Text(" > Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
+        ImGui::Text(" > Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
+        ImGui::Text(" > Model Draw %.2f ms", GPU_TIMER_GET(model));
         //ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
         //ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
-        ImGui::Text("%.1f s", time);
+        ImGui::Text("\nTime: %.1f s", time);
         ImGui::End();
     }
 
@@ -422,6 +416,8 @@ void PBRApp::render(float dt)
             voxelGridResolution,
             voxelGridResolution*voxelGridResolution*voxelGridResolution);
         ImGui::Checkbox("Visualize", &visualizeVoxels);
+        ImGui::SameLine();
+        ImGui::Checkbox("Show Model", &showModel);
         if (ImGui::Button("Clear"))
             clearVoxels();
         ImGui::End();

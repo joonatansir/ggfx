@@ -13,5 +13,5 @@ layout (binding = 2) uniform sampler2D sampler2;
 
 void main()
 {
-	color = vec4(0.5*fs_in.normal+0.5, 1.0) * texture(sampler2, fs_in.textureCoord);
+	color = vec4(texture(sampler2, fs_in.textureCoord));
 }

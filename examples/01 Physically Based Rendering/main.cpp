@@ -8,6 +8,6 @@ int CALLBACK WinMain(
     LPSTR     lpCmdLine,
     int       nCmdShow)
 {
-    PBRApp app(1280, 720, "PBR");
+    PBRApp app(1600, 900, "PBR");
     app.run();
 }
