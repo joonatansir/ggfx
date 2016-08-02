@@ -122,5 +122,8 @@
     <ClInclude Include="ggfx\GPUTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ggfx\GLhelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

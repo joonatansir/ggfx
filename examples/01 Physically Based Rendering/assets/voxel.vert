@@ -7,17 +7,16 @@ layout (location = 5) uniform mat4 projection;
 layout (location = 6) uniform mat4 view;
 layout (location = 7) uniform mat4 model;
 
-out gl_PerVertex { vec4 gl_Position; };
-
 out VertexData
 {
+  vec3 position;
   vec3 normal;
   vec2 textureCoord;
 } vs_out;
 
 void main()
 {
-  vs_out.normal = (model * vec4(inNormal, 1.0)).xyz;
+  vs_out.normal = (vec4(inNormal, 1.0)).xyz;
   vs_out.textureCoord = inTexCoord;
-  gl_Position = projection * view * model * vec4(inPosition , 1.0);
+  vs_out.position = (projection * view * model * vec4(inPosition , 1.0)).xyz;
 }

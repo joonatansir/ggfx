@@ -13,6 +13,7 @@
 #include "ShaderEditing.h"
 #include "Shader.h"
 #include "GPUTimer.h"
+#include "GLhelper.h"
 
 //TODO: remove this
 #include "GLFWWindow.h"
@@ -101,14 +102,22 @@ static glm::vec2 lastCursorPosition;
 
 //voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 64;
-static int voxelGridSize = 4;
+static int voxelGridResolution = 32;
+static int voxelGridSize = 2;
+
+//voxelize renderbuffers
+GLuint voxelizeColorRenderbuffer;
+GLuint voxelizeDepthRenderbuffer;
+GLuint voxelizeFBO;
+static GLenum voxelImageFormat = GL_RGBA8;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
     pipeline.useProgramStage(voxelGeom);
     pipeline.useProgramStage(voxelFrag);
     pipeline.useProgramStage(voxelVert);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
 
     glViewport(0, 0, voxelGridResolution, voxelGridResolution);
     glDisable(GL_DEPTH_TEST);
@@ -119,11 +128,21 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     float halfGridSize = voxelGridSize / 2.0f;
     glm::mat4 orthoProj = glm::ortho(-halfGridSize, halfGridSize, -halfGridSize, halfGridSize, 0.0f, (float)voxelGridSize);
     glm::mat4 orthoView = glm::inverse(glm::translate(glm::mat4(), glm::vec3(0, 0, halfGridSize)));
+    glm::mat3 projMatrices[] = { glm::mat3(0.0, 0.0, 1.0,
+                                           0.0, 1.0, 0.0,
+                                           1.0, 0.0, 0.0),
+                                 glm::mat3(1.0, 0.0, 0.0,
+                                           0.0, 0.0, 1.0,
+                                           0.0, 1.0, 0.0),
+                                 glm::mat3(1.0, 0.0, 0.0,
+                                           0.0, 1.0, 0.0,
+                                           0.0, 0.0, 1.0) };
     glProgramUniformMatrix4fv(voxelVert.id, 5, 1, GL_FALSE, &orthoProj[0][0]);
     glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
     glProgramUniformMatrix4fv(voxelVert.id, 7, 1, GL_FALSE, &world[0][0]);
+    glProgramUniformMatrix3fv(voxelGeom.id, 15, 3, GL_FALSE, &projMatrices[0][0][0]);
     glProgramUniform1i(voxelFrag.id, 9, voxelGridResolution);
-    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, voxelImageFormat);
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
@@ -141,6 +160,8 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 static void visualizeVoxelGrid()
@@ -156,7 +177,7 @@ static void visualizeVoxelGrid()
     glProgramUniformMatrix4fv(visualizeVoxelVert.id, 7, 1, GL_FALSE, &glm::mat4()[0][0]);
     glProgramUniform1i(visualizeVoxelVert.id, 8, voxelGridSize);
     glProgramUniform1i(visualizeVoxelVert.id, 9, voxelGridResolution);
-    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, voxelImageFormat);
 
     int voxelCount = voxelGridResolution*voxelGridResolution*voxelGridResolution;
 
@@ -176,7 +197,7 @@ static void clearVoxels()
 {
     glDeleteTextures(1, &voxelTexture);
     glCreateTextures(GL_TEXTURE_3D, 1, &voxelTexture);
-    glTextureStorage3D(voxelTexture, 1, GL_RGBA32F, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+    glTextureStorage3D(voxelTexture, 1, voxelImageFormat, voxelGridResolution, voxelGridResolution, voxelGridResolution);
 }
 
 void PBRApp::init()
@@ -185,6 +206,8 @@ void PBRApp::init()
 
     Assets::scanAssetDirectory("assets/");
     
+    GL_PRINT(GL_MAX_SAMPLES);
+
     glGenVertexArrays(2, vaos);
     glBindVertexArray(vaos[0]);
 
@@ -228,7 +251,7 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("vivi.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("cube_uv.bof"), &indices, &vertexBufferSize, &indexBufferSize);
     vertexBuffer.create(dataBof, vertexBufferSize);
     indexBuffer.create(indices, indexBufferSize);
 
@@ -259,7 +282,26 @@ void PBRApp::init()
     //Voxelization
     glGenTextures(1, &voxelTexture);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
-    glTextureStorage3D(voxelTexture, 1, GL_RGBA32F, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+    glTextureStorage3D(voxelTexture, 1, voxelImageFormat, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+
+    glGenRenderbuffers(1, &voxelizeColorRenderbuffer);
+    glGenRenderbuffers(1, &voxelizeDepthRenderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, voxelizeColorRenderbuffer);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, voxelImageFormat, voxelGridResolution, voxelGridResolution);
+    glBindRenderbuffer(GL_RENDERBUFFER, voxelizeDepthRenderbuffer);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH_COMPONENT32F, voxelGridResolution, voxelGridResolution);
+
+    glGenFramebuffers(1, &voxelizeFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, voxelizeColorRenderbuffer);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, voxelizeDepthRenderbuffer);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+        LOG(info, "FBO Complete\n");
+    else
+        LOG(info, "FBO Not Complete");
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glEnable(GL_BLEND);
@@ -279,7 +321,7 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelFrag);
 
-    pos.y = -1.0f;
+    //pos.y = -1.0f;
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
     glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
     world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotation);
@@ -347,7 +389,7 @@ void PBRApp::render(float dt)
     pipeline2.useProgramStage(CubemapFrag);
 
     //cubemap
-    //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindProgramPipeline(pipeline.id);
 
@@ -358,6 +400,7 @@ void PBRApp::render(float dt)
     vertexBuffer.bind();
 
     GPU_TIMER_START(model);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     if(showModel)
         glDrawElementsInstanced(
             GL_TRIANGLES,
@@ -365,6 +408,7 @@ void PBRApp::render(float dt)
             GL_UNSIGNED_INT,
             0,
             1);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     GPU_TIMER_END(model);
 
     GPU_TIMER_START(voxelize);
@@ -376,7 +420,9 @@ void PBRApp::render(float dt)
         visualizeVoxelGrid();
     GPU_TIMER_END(visualize);
 
+    GPU_TIMER_START(clearVoxels);
     clearVoxels();
+    GPU_TIMER_END(clearVoxels);
 
     GPU_TIMER_END(frame);
 

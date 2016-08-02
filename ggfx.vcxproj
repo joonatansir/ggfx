@@ -41,6 +41,7 @@
     <ClInclude Include="ggfx\App.h" />
     <ClInclude Include="ggfx\Assets.h" />
     <ClInclude Include="ggfx\GLFWWindow.h" />
+    <ClInclude Include="ggfx\GLhelper.h" />
     <ClInclude Include="ggfx\GPUBuffer.h" />
     <ClInclude Include="ggfx\DebugUI.h" />
     <ClInclude Include="ggfx\ggfx.h" />
