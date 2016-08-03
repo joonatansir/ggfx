@@ -6,11 +6,11 @@
 using namespace ggfx;
 
 #if defined(_DEBUG)
-#define CHECK_PROGRAM_INFO_LOG(id)                   \
+#define CHECK_PROGRAM_INFO_LOG(id, filename)                   \
     char buffer[512] = { 0 };                        \
     int32 length;                                    \
     glGetProgramInfoLog((id), 512, &length, buffer); \
-    if (length > 0) Log::info(buffer);               \
+    if (length > 0) Log::info("Problem compiling %s:%s", filename, buffer);               \
 
 #else
 #define CHECK_PROGRAM_INFO_LOG(id)
@@ -41,7 +41,7 @@ void Shader::create(const std::string& filename, GLenum type)
     const uint8* source = loadFile(info.filename);
     id = glCreateShaderProgramv(type, 1, (const char**)&source);
     delete[] source;
-    CHECK_PROGRAM_INFO_LOG(id);
+    CHECK_PROGRAM_INFO_LOG(id, filename.c_str());
 
     switch (type)
     {

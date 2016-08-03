@@ -8,7 +8,7 @@ layout (location = 5) uniform mat4 projection;
 layout (location = 8) uniform int gridSize;
 layout (location = 9) uniform int gridResolution;
 
-layout (binding = 0, rgba32f) coherent uniform image3D voxelTexture;
+layout (binding = 0, rgba8) uniform image3D voxelTexture;
 
 out gl_PerVertex { vec4 gl_Position; };
 
@@ -30,4 +30,3 @@ void main()
   translatedModel[3] = vec4(cubePos, 1.0);
   gl_Position = projection * view * translatedModel * vec4(inPosition*scale, 1.0);
 }
-
