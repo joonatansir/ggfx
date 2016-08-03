@@ -70,6 +70,7 @@ static Shader voxelFrag;
 static Shader voxelVert;
 static Shader visualizeVoxelVert;
 static Shader visualizeVoxelFrag;
+static Shader physicallyBased;
 
 static uint32 indexBufferSize;
 static uint32 cubeVertexBufferSize;
@@ -113,13 +114,13 @@ static GLenum voxelImageFormat = GL_RGBA8;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
-    pipeline.useProgramStage(voxelGeom);
-    pipeline.useProgramStage(voxelFrag);
-    pipeline.useProgramStage(voxelVert);
+    //pipeline.useProgramStage(voxelGeom);
+    //pipeline.useProgramStage(voxelFrag);
+    //pipeline.useProgramStage(voxelVert);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
+    //glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
 
-    glViewport(0, 0, voxelGridResolution, voxelGridResolution);
+    /*glViewport(0, 0, voxelGridResolution, voxelGridResolution);
     glDisable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
@@ -143,14 +144,14 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glProgramUniformMatrix3fv(voxelGeom.id, 15, 3, GL_FALSE, &projMatrices[0][0][0]);
     glProgramUniform1i(voxelFrag.id, 9, voxelGridResolution);
 
-    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);*/
 
-    glDrawElementsInstanced(
+    /*glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(indexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
-        1);
+        1);*/
 
     pipeline.clearProgramStage(voxelVert);
     pipeline.clearProgramStage(voxelFrag);
@@ -242,10 +243,7 @@ void PBRApp::init()
     voxelVert.create(Assets::getPath("voxel.vert"), GL_VERTEX_SHADER);
     visualizeVoxelVert.create(Assets::getPath("visualize_voxel.vert"), GL_VERTEX_SHADER);
     visualizeVoxelFrag.create(Assets::getPath("visualize_voxel.frag"), GL_FRAGMENT_SHADER);
-
-    pipeline.useProgramStage(basicVert);
-    pipeline.useProgramStage(basicFrag);
-    pipeline.useProgramStage(voxelGeom);
+    physicallyBased.create(Assets::getPath("physicallyBased.frag"), GL_FRAGMENT_SHADER);
 
     pipeline2.useProgramStage(CubemapVert);
     pipeline2.useProgramStage(CubemapFrag);
@@ -309,6 +307,8 @@ void PBRApp::init()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
+static bool animateModel = false;
+
 void PBRApp::update(float dt)
 {
     static float time = 0.0f;
@@ -321,11 +321,18 @@ void PBRApp::update(float dt)
     CHECK_FOR_SHADER_UPDATE(voxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelVert);
     CHECK_FOR_SHADER_UPDATE(visualizeVoxelFrag);
+    CHECK_FOR_SHADER_UPDATE(physicallyBased);
 
-    //pos.y = -1.0f;
+    static float upDownTimer = 0.0f;
+    if (animateModel)
+    {
+        upDownTimer += dt;
+        pos.y = sin(upDownTimer);
+        rotationAmount += 0.01f;
+    }
     glm::vec3 scale = glm::vec3(scaleAmount, scaleAmount, scaleAmount);
-    glm::vec3 rotation = glm::vec3(0.0f, 1.0f, 0.0f);
-    world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotation);
+    glm::vec3 rotationAxis = glm::vec3(0.0f, 1.0f, 0.0f);
+    world = glm::rotate(glm::scale(glm::translate(glm::mat4(), pos), scale), rotationAmount, rotationAxis);
 
     glm::vec2 delta(0);
     int32 status = glfwGetMouseButton(window->handle->ptr, GLFW_MOUSE_BUTTON_RIGHT);
@@ -372,6 +379,9 @@ void PBRApp::render(float dt)
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LEQUAL);
 
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+
     //glClearColor(0.5f*sin(time)+0.5f, 0.5f*cos(1.5f+time/2.0f)+0.5f, 0.2f, 1.0f);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -382,6 +392,8 @@ void PBRApp::render(float dt)
 
     glProgramUniformMatrix4fv(CubemapVert.id, 5, 1, GL_FALSE, &projection[0][0]);
     glProgramUniformMatrix4fv(CubemapVert.id, 6, 1, GL_FALSE, &view[0][0]);
+
+    glProgramUniform3fv(physicallyBased.id, 3, 1, &cameraPos[0]);
 
     glBindProgramPipeline(pipeline2.id);
 
@@ -394,8 +406,9 @@ void PBRApp::render(float dt)
 
     glBindProgramPipeline(pipeline.id);
 
+    pipeline.clearAllStages();
     pipeline.useProgramStage(basicVert);
-    pipeline.useProgramStage(basicFrag);
+    pipeline.useProgramStage(physicallyBased);
 
     glBindVertexArray(vaos[0]);
     vertexBuffer.bind();
@@ -412,20 +425,22 @@ void PBRApp::render(float dt)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     GPU_TIMER_END(model);
 
-    GPU_TIMER_START(voxelize);
+    
+    //GPU_TIMER_START(voxelize);
     voxelize(windowSize.x, windowSize.y);
-    GPU_TIMER_END(voxelize);
-
+    //GPU_TIMER_END(voxelize);
+    /*
     GPU_TIMER_START(visualize);
-    if (visualizeVoxels)
-        visualizeVoxelGrid();
+    //if (visualizeVoxels)
+    //    visualizeVoxelGrid();
     GPU_TIMER_END(visualize);
 
     GPU_TIMER_START(clearVoxels);
-    clearVoxels();
+    //clearVoxels();
     GPU_TIMER_END(clearVoxels);
 
     GPU_TIMER_END(frame);
+    */
 
     const int32 frames = 100;
     static float averageFrameRate = 0.0f;
@@ -446,9 +461,9 @@ void PBRApp::render(float dt)
         ImGui::Begin("Stats", 0, ImVec2(panelWidth, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
         ImGui::ProgressBar(GPU_TIMER_GET(frame) / 16.666f, ImVec2(-1.0f, 5.0f), "");
         ImGui::Text("\nGPU Frame Time %.2f ms", GPU_TIMER_GET(frame));
-        ImGui::Text(" > Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
-        ImGui::Text(" > Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
-        ImGui::Text(" > Model Draw %.2f ms", GPU_TIMER_GET(model));
+        //ImGui::Text(" > Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
+        //ImGui::Text(" > Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
+        //ImGui::Text(" > Model Draw %.2f ms", GPU_TIMER_GET(model));
         //ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
         //ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
         ImGui::Text("\nTime: %.1f s", time);
@@ -467,6 +482,12 @@ void PBRApp::render(float dt)
         ImGui::Checkbox("Show Model", &showModel);
         if (ImGui::Button("Clear"))
             clearVoxels();
+        ImGui::End();
+    }
+
+    {
+        ImGui::Begin("Model");
+        ImGui::Checkbox("Animate", &animateModel);
         ImGui::End();
     }
 

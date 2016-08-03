@@ -32,6 +32,18 @@ void ShaderPipeline::clearProgramStage(Shader& shader)
     glUseProgramStages(id, shader.info.stages, 0);
 }
 
+void ShaderPipeline::clearProgramStage(GLbitfield stage)
+{
+    assert(id != 0);
+    glUseProgramStages(id, stage, 0);
+}
+
+void ShaderPipeline::clearAllStages()
+{
+    assert(id != 0);
+    glUseProgramStages(id, GL_ALL_SHADER_BITS, 0);
+}
+
 void ShaderPipeline::create()
 {
     glGenProgramPipelines(1, &id);

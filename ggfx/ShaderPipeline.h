@@ -19,6 +19,8 @@ namespace ggfx
 
         void useProgramStage(Shader& shader);
         void clearProgramStage(Shader& shader);
+        void clearProgramStage(GLbitfield stage);
+        void clearAllStages();
         void create();
 
         uint32 id;
