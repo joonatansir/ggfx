@@ -343,10 +343,10 @@ void PBRApp::update(float dt)
     }
     lastCursorPosition = glm::vec2(Input::mousePosition.x, Input::mousePosition.y);
 
-    float movementSpeed = dt * 400.0f;
+    float movementSpeed = dt * 50.0f;
     if ((glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))
     {
-        movementSpeed *= 0.1f;
+        movementSpeed *= 0.5f;
     }
 
     int32 key_w = (glfwGetKey(window->handle->ptr, GLFW_KEY_W) == GLFW_PRESS);
