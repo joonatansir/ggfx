@@ -87,7 +87,7 @@ static glm::ivec2 windowSize;
 //Object
 static float scaleAmount = 1.0f;
 static float rotationAmount = 0.0f;
-static glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
+static glm::vec3 pos = glm::vec3(0.0f, -10.0f, 0.0f);
 
 //Camera
 static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -104,7 +104,7 @@ static glm::vec2 lastCursorPosition;
 //voxel stuff
 static GLuint voxelTexture;
 static int voxelGridResolution = 128;
-static int voxelGridWorldSize = 3;
+static int voxelGridWorldSize = 2;
 
 //voxelize renderbuffers
 GLuint voxelizeColorRenderbuffer;
@@ -114,13 +114,13 @@ static GLenum voxelImageFormat = GL_RGBA8;
 
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
-    //pipeline.useProgramStage(voxelGeom);
-    //pipeline.useProgramStage(voxelFrag);
-    //pipeline.useProgramStage(voxelVert);
+    pipeline.useProgramStage(voxelGeom);
+    pipeline.useProgramStage(voxelFrag);
+    pipeline.useProgramStage(voxelVert);
 
-    //glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
 
-    /*glViewport(0, 0, voxelGridResolution, voxelGridResolution);
+    glViewport(0, 0, voxelGridResolution, voxelGridResolution);
     glDisable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
@@ -144,14 +144,14 @@ static void voxelize(int32 windowWidth, int32 windowHeight)
     glProgramUniformMatrix3fv(voxelGeom.id, 15, 3, GL_FALSE, &projMatrices[0][0][0]);
     glProgramUniform1i(voxelFrag.id, 9, voxelGridResolution);
 
-    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);*/
+    glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
-    /*glDrawElementsInstanced(
+    glDrawElementsInstanced(
         GL_TRIANGLES,
         (GLsizei)(indexBufferSize / sizeof(uint32)),
         GL_UNSIGNED_INT,
         0,
-        1);*/
+        1);
 
     pipeline.clearProgramStage(voxelVert);
     pipeline.clearProgramStage(voxelFrag);
@@ -171,6 +171,7 @@ static void visualizeVoxelGrid()
     glBindVertexArray(vaos[1]);
     cubeVertexBuffer.bind();
 
+    pipeline.clearProgramStage(GL_GEOMETRY_SHADER_BIT);
     pipeline.useProgramStage(visualizeVoxelVert);
     pipeline.useProgramStage(visualizeVoxelFrag);
 
@@ -184,6 +185,8 @@ static void visualizeVoxelGrid()
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     int voxelCount = voxelGridResolution*voxelGridResolution*voxelGridResolution;
     glDrawElementsInstanced(
         GL_TRIANGLES,
@@ -191,6 +194,8 @@ static void visualizeVoxelGrid()
         GL_UNSIGNED_INT,
         0,
         voxelCount);
+
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glBindVertexArray(vaos[0]);
 }
@@ -425,22 +430,27 @@ void PBRApp::render(float dt)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     GPU_TIMER_END(model);
 
+    static bool v = true;
+    GPU_TIMER_START(voxelize);
+    if (v)
+    {
+        voxelize(windowSize.x, windowSize.y);
+        v = true;
+    }
+    GPU_TIMER_END(voxelize);
     
-    //GPU_TIMER_START(voxelize);
-    voxelize(windowSize.x, windowSize.y);
-    //GPU_TIMER_END(voxelize);
-    /*
     GPU_TIMER_START(visualize);
-    //if (visualizeVoxels)
-    //    visualizeVoxelGrid();
+    if (visualizeVoxels)
+        visualizeVoxelGrid();
     GPU_TIMER_END(visualize);
 
-    GPU_TIMER_START(clearVoxels);
-    //clearVoxels();
-    GPU_TIMER_END(clearVoxels);
+    glFlush();
 
+    GPU_TIMER_START(clearVoxels);
+    clearVoxels();
+    GPU_TIMER_END(clearVoxels);
+    
     GPU_TIMER_END(frame);
-    */
 
     const int32 frames = 100;
     static float averageFrameRate = 0.0f;
@@ -461,11 +471,11 @@ void PBRApp::render(float dt)
         ImGui::Begin("Stats", 0, ImVec2(panelWidth, 0), 0.3f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
         ImGui::ProgressBar(GPU_TIMER_GET(frame) / 16.666f, ImVec2(-1.0f, 5.0f), "");
         ImGui::Text("\nGPU Frame Time %.2f ms", GPU_TIMER_GET(frame));
-        //ImGui::Text(" > Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
-        //ImGui::Text(" > Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
-        //ImGui::Text(" > Model Draw %.2f ms", GPU_TIMER_GET(model));
-        //ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
-        //ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
+        ImGui::Text(" > Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
+        ImGui::Text(" > Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
+        ImGui::Text(" > Model Draw %.2f ms", GPU_TIMER_GET(model));
+        ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
+        ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
         ImGui::Text("\nTime: %.1f s", time);
         ImGui::End();
     }

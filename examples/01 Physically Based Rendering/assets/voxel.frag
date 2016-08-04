@@ -1,7 +1,7 @@
 #version 450 core
 
 layout (r32ui, binding = 0) uniform uimage3D voxelImage;
-layout (binding = 1) uniform sampler2D sampler;
+layout (binding = 2) uniform sampler2D sampler;
 layout (location = 9) uniform int gridResolution;
 
 in VoxelData
@@ -70,7 +70,7 @@ void main()
   //imageAtomicRGBA8Avg(voxelImage, coords, texture(sampler, fs_in.textureCoord));
   //imageStore(voxelImage, coords, texture(sampler, fs_in.textureCoord));
   
-  /*vec4 val = texture(sampler, fs_in.textureCoord);
+  vec4 val = vec4(1.0, 0.0, 0.0, 1.0);//texture(sampler, fs_in.textureCoord);
   val.a = 255;
   val.rgb *= 255.0f; // Optimise following calculations
   uint newVal = convVec4ToRGBA8(val);
@@ -87,10 +87,12 @@ void main()
     vec4 curValF = rval + val;                    // Add new value
     curValF.xyz /= (curValF.w);                  // Renormalize
     newVal = convVec4ToRGBA8( curValF );
-  }*/
+  }
   
+  /*
   vec4 albedo = texture(sampler, fs_in.textureCoord) * 255.0;
   albedo.a = 1;
   uint data = convVec4ToRGBA8(albedo);
   imageAtomicAdd(voxelImage, coords, data);
+  */
 }

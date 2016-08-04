@@ -9,7 +9,7 @@ in VS_OUT
 out vec4 color;
 
 //layout (binding = 1) uniform sampler2D sampler;
-layout (binding = 1) uniform sampler2D sampler2;
+layout (binding = 2) uniform sampler2D sampler2;
 
 void main()
 {

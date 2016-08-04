@@ -5,11 +5,11 @@ out vec4 color;
 
 void main()
 {
-  if(voxelColor.a < 0.0001)
+  if(voxelColor.a < 0.001)
     discard;
   
-  color = vec4(vec3(voxelColor / (voxelColor.a * 255.0)), 1.0);
+  //color = vec4(vec3(voxelColor / (voxelColor.a * 255.0)), 1.0);
   vec4 v = voxelColor;
-  //v.a = 0.5;
-  //color = v;
+  //v.a = 0.2;
+  color = v;
 }

@@ -19,7 +19,7 @@ out VS_OUT
 
 void main()
 {
-  vs_out.normal = inNormal;
+  vs_out.normal = (model * vec4(inNormal, 1.0)).xyz;
 	vs_out.textureCoord = inTexCoord;
 	
   vs_out.position = (model * vec4(inPosition , 1.0)).xyz;
