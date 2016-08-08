@@ -87,7 +87,7 @@ static glm::ivec2 windowSize;
 //Object
 static float scaleAmount = 1.0f;
 static float rotationAmount = 0.0f;
-static glm::vec3 pos = glm::vec3(0.0f, -10.0f, 0.0f);
+static glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 //Camera
 static glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -103,7 +103,7 @@ static glm::vec2 lastCursorPosition;
 
 //voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 128;
+static int voxelGridResolution = 64;
 static int voxelGridWorldSize = 2;
 
 //voxelize renderbuffers
@@ -202,9 +202,10 @@ static void visualizeVoxelGrid()
 
 static void clearVoxels()
 {
-    glDeleteTextures(1, &voxelTexture);
-    glCreateTextures(GL_TEXTURE_3D, 1, &voxelTexture);
-    glTextureStorage3D(voxelTexture, 1, voxelImageFormat, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+    //glDeleteTextures(1, &voxelTexture);
+    //glCreateTextures(GL_TEXTURE_3D, 1, &voxelTexture);
+    //glTextureStorage3D(voxelTexture, 1, voxelImageFormat, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+    glClearTexImage(voxelTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 }
 
 void PBRApp::init()
@@ -291,7 +292,7 @@ void PBRApp::init()
     glGenRenderbuffers(1, &voxelizeColorRenderbuffer);
     glGenRenderbuffers(1, &voxelizeDepthRenderbuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, voxelizeColorRenderbuffer);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, voxelImageFormat, voxelGridResolution, voxelGridResolution);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_RGBA32F, voxelGridResolution, voxelGridResolution);
     glBindRenderbuffer(GL_RENDERBUFFER, voxelizeDepthRenderbuffer);
     glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH_COMPONENT32F, voxelGridResolution, voxelGridResolution);
 
@@ -474,9 +475,9 @@ void PBRApp::render(float dt)
         ImGui::Text(" > Voxelization %.2f ms", GPU_TIMER_GET(voxelize));
         ImGui::Text(" > Voxel Draw %.2f ms", GPU_TIMER_GET(visualize));
         ImGui::Text(" > Model Draw %.2f ms", GPU_TIMER_GET(model));
-        ImGui::Text("dt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
+        ImGui::Text("\ndt %.3f ms, %.1f FPS", dt * 1000.0f, 1.0f / (averageFrameRate / frames));
         ImGui::Text("mouse x: %.2f, y: %.2f", Input::mousePosition.x, Input::mousePosition.y);
-        ImGui::Text("\nTime: %.1f s", time);
+        ImGui::Text("Time: %.1f s", time);
         ImGui::End();
     }
 

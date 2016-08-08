@@ -28,37 +28,6 @@ uint convVec4ToRGBA8( vec4 val)
          (uint(val.y) & 0x000000FF) << 8U | 
          (uint(val.x) & 0x000000FF);
 }
- 
-/*void imageAtomicRGBA8Avg(coherent uimage3D img, ivec3 coords, vec4 val)
-{
-  val.rgb *= 255.0f; // Optimise following calculations
-  uint newVal = convVec4ToRGBA8(val);
-  uint prevStoredVal = 0; 
-  uint curStoredVal;
-    
-  // Loop as long as destination value gets changed by other threads
-  while((curStoredVal = imageAtomicCompSwap(img, coords, prevStoredVal, newVal)) != prevStoredVal)
-  {
-    prevStoredVal = curStoredVal;
-    vec4 rval = convRGBA8ToVec4( curStoredVal);
-    rval.xyz =(rval.xyz * rval.w);                // Denormalize
-    vec4 curValF = rval + val;                    // Add new value
-    curValF. xyz /= (curValF.w);                  // Renormalize
-    newVal = convVec4ToRGBA8( curValF );
-  }
-}*/
-
-/*void imageAtomicFloatAdd(coherent volatile uimage3D imgUI , ivec3 coords , float val )
-{
-  uint newVal = floatBitsToUint( val );
-  uint prevVal = 0; uint curVal ;
-  // Loop as long as destination value gets changed by other threads
-  while ( ( curVal = imageAtomicCompSwap(imgUI, coords, prevVal, newVal)) != prevVal )
-  {
-    prevVal = curVal ;
-    newVal = floatBitsToUint(( val + uintBitsToFloat( curVal )));
-  }
-}*/
 
 void main()
 {
@@ -66,33 +35,18 @@ void main()
   ivec3 coords = ivec3(round(fs_in.position.x*(res)), 
                        round(fs_in.position.y*(res)), 
                        round((fs_in.position.z)*(res)));
-                       
-  //imageAtomicRGBA8Avg(voxelImage, coords, texture(sampler, fs_in.textureCoord));
-  //imageStore(voxelImage, coords, texture(sampler, fs_in.textureCoord));
   
-  vec4 val = vec4(1.0, 0.0, 0.0, 1.0);//texture(sampler, fs_in.textureCoord);
-  val.a = 255;
-  val.rgb *= 255.0f; // Optimise following calculations
+  vec4 val = texture(sampler, fs_in.textureCoord);
+  val.rgba *= 255.0f;
   uint newVal = convVec4ToRGBA8(val);
   uint prevStoredVal = 0; 
   uint curStoredVal;
     
-  // Loop as long as destination value gets changed by other threads
   while((curStoredVal = imageAtomicCompSwap(voxelImage, coords, prevStoredVal, newVal)) != prevStoredVal)
   {
     prevStoredVal = curStoredVal;
     vec4 rval = convRGBA8ToVec4( curStoredVal);
-    
-    rval.xyz *= rval.a;                // Denormalize
-    vec4 curValF = rval + val;                    // Add new value
-    curValF.xyz /= (curValF.w);                  // Renormalize
-    newVal = convVec4ToRGBA8( curValF );
+    vec4 avg = (rval + val) / 2.0;
+    newVal = convVec4ToRGBA8(avg);
   }
-  
-  /*
-  vec4 albedo = texture(sampler, fs_in.textureCoord) * 255.0;
-  albedo.a = 1;
-  uint data = convVec4ToRGBA8(albedo);
-  imageAtomicAdd(voxelImage, coords, data);
-  */
 }

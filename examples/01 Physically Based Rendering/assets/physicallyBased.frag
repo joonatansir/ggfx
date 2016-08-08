@@ -21,15 +21,16 @@ const int NUM_SAMPLES = 1;
 vec3 fresnel(vec3 f0, float LdotH)
 {
   //Schlick approximation
-  return f0 + (1.0 - f0) * pow(1.0 - LdotH, 5);
+  return f0 + (1.0 - f0) * pow(1.0 - LdotH, 5.0);
 }
 
 float distribution(float NdotH, float roughness)
 {
   // GGX/Trowbridge-Reitz
-  float a2 = roughness * roughness;
-  float b = NdotH * NdotH * (a2 - 1.0) + 1.0;
-  return a2 / (PI * b * b);
+  float a = roughness * roughness;
+  float aSqrd = a*a;
+  float b = NdotH * NdotH * (aSqrd - 1.0) + 1.0;
+  return aSqrd / (PI * b * b);
 }
 
 float shadowingMasking(float NdotV, float NdotL, float roughness)
@@ -46,7 +47,7 @@ void main()
 {
   vec4 albedo = texture(sampler2, fs_in.textureCoord);//vec4(1.0, 0.6, 0.9, 1.0) / PI;
   
-  float roughness = 0.6;
+  float roughness = 0.75;
   vec3 n = normalize(fs_in.normal);
   vec3 v = normalize(eyePosition - fs_in.position);
   
