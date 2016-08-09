@@ -1,6 +1,7 @@
 #version 450 core
 
 layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec3 inNormal;
 
 layout (location = 7) uniform mat4 model;
 layout (location = 6) uniform mat4 view;
@@ -13,6 +14,8 @@ layout (binding = 0, rgba8) uniform image3D voxelTexture;
 out gl_PerVertex { vec4 gl_Position; };
 
 out vec4 voxelColor;
+out vec3 normal;
+flat out ivec3 voxelCoords;
 
 void main()
 {
@@ -20,7 +23,8 @@ void main()
                 (gl_InstanceID % (gridResolution*gridResolution)) / gridResolution,
                 gl_InstanceID / (gridResolution*gridResolution));
   
-  voxelColor = imageLoad(voxelTexture, c);
+  normal = inNormal;
+  voxelCoords = c;
 
   float scale = float(gridWorldSize) / gridResolution;
   vec3 startPos = (vec3(-gridWorldSize, -gridWorldSize, gridWorldSize) + vec3(scale, scale, -scale)) / 2.0;

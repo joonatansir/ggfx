@@ -32,7 +32,7 @@ uint convVec4ToRGBA8( vec4 val)
 void main()
 {
   float res = gridResolution - 1;
-  ivec3 coords = ivec3(round(fs_in.position.x*(res)), 
+  ivec3 coords = ivec3(round(fs_in.position.x*(res)),// + fs_in.faceIndex * gridResolution), 
                        round(fs_in.position.y*(res)), 
                        round((fs_in.position.z)*(res)));
   
@@ -48,5 +48,12 @@ void main()
     vec4 rval = convRGBA8ToVec4( curStoredVal);
     vec4 avg = (rval + val) / 2.0;
     newVal = convVec4ToRGBA8(avg);
+  }
+  
+  for(int i = 1; i < 6; i++)
+  {
+    ivec3 s = coords;
+    s.x += i * gridResolution;
+    imageAtomicExchange(voxelImage, s, 0xffffffff);
   }
 }

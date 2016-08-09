@@ -103,7 +103,10 @@ static glm::vec2 lastCursorPosition;
 
 //voxel stuff
 static GLuint voxelTexture;
-static int voxelGridResolution = 64;
+static int voxelGridResolution = 32;
+const static int numFaces = 6;
+static int voxelGridTexelWidth = voxelGridResolution * numFaces;
+static int voxelGridTexelHeight = voxelGridResolution;
 static int voxelGridWorldSize = 2;
 
 //voxelize renderbuffers
@@ -180,6 +183,7 @@ static void visualizeVoxelGrid()
     glProgramUniformMatrix4fv(visualizeVoxelVert.id, 7, 1, GL_FALSE, &glm::mat4()[0][0]);
     glProgramUniform1i(visualizeVoxelVert.id, 8, voxelGridWorldSize);
     glProgramUniform1i(visualizeVoxelVert.id, 9, voxelGridResolution);
+    glProgramUniform1i(visualizeVoxelFrag.id, 9, voxelGridResolution);
 
     glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, voxelImageFormat);
 
@@ -287,7 +291,7 @@ void PBRApp::init()
     //Voxelization
     glGenTextures(1, &voxelTexture);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
-    glTextureStorage3D(voxelTexture, 1, voxelImageFormat, voxelGridResolution, voxelGridResolution, voxelGridResolution);
+    glTextureStorage3D(voxelTexture, 1, voxelImageFormat, voxelGridTexelWidth, voxelGridTexelHeight, voxelGridResolution);
 
     glGenRenderbuffers(1, &voxelizeColorRenderbuffer);
     glGenRenderbuffers(1, &voxelizeDepthRenderbuffer);
@@ -352,7 +356,7 @@ void PBRApp::update(float dt)
     float movementSpeed = dt * 50.0f;
     if ((glfwGetKey(window->handle->ptr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))
     {
-        movementSpeed *= 0.5f;
+        movementSpeed *= 0.1f;
     }
 
     int32 key_w = (glfwGetKey(window->handle->ptr, GLFW_KEY_W) == GLFW_PRESS);
@@ -431,13 +435,8 @@ void PBRApp::render(float dt)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     GPU_TIMER_END(model);
 
-    static bool v = true;
     GPU_TIMER_START(voxelize);
-    if (v)
-    {
-        voxelize(windowSize.x, windowSize.y);
-        v = true;
-    }
+    voxelize(windowSize.x, windowSize.y);
     GPU_TIMER_END(voxelize);
     
     GPU_TIMER_START(visualize);
