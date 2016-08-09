@@ -46,26 +46,24 @@ float shadowingMasking(float NdotV, float NdotL, float roughness)
 void main()
 {
   vec4 albedo = texture(sampler2, fs_in.textureCoord);//vec4(1.0, 0.6, 0.9, 1.0) / PI;
+  float roughness = 0.5;
+  vec3 f0 = vec3(0.2);
   
-  float roughness = 0.75;
   vec3 n = normalize(fs_in.normal);
   vec3 v = normalize(eyePosition - fs_in.position);
-  
-  vec4 specular = vec4(0);
-  
   vec3 l = reflect(-v, fs_in.normal);
-  vec4 radiance = texture(sky, l);
   vec3 h = normalize(v + l);
-
+  vec4 radiance = texture(sky, l);
+  
   float LdotH = clamp(dot(l, h), 0.0, 1.0);
   float NdotH = clamp(dot(n, h), 0.0, 1.0);
   float NdotL = clamp(dot(n, l), 0.0, 1.0);
   float NdotV = clamp(dot(n, v), 0.0, 1.0);
 
   // (F * G * D) / 4 * NdotL * NdotV 
-  vec3 F = fresnel(vec3(0.7), LdotH);
+  vec3 F = fresnel(f0, LdotH);
   float G = shadowingMasking(NdotV, NdotL, roughness);
   float D = distribution(NdotH, roughness);
   
-	color = albedo + radiance * vec4((F * G * D) / (4.0 * NdotV * NdotL), 1.0);
+  color = albedo + radiance * vec4((F * G * D) / (4.0 * NdotV * NdotL), 1.0);
 }

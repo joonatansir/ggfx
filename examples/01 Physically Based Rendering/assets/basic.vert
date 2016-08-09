@@ -13,15 +13,15 @@ out gl_PerVertex { vec4 gl_Position; };
 out VS_OUT
 {
   vec3 position;
-	vec3 normal;
-	vec2 textureCoord;
+  vec3 normal;
+  vec2 textureCoord;
 } vs_out;
 
 void main()
 {
   vs_out.normal = (model * vec4(inNormal, 1.0)).xyz;
-	vs_out.textureCoord = inTexCoord;
-	
+  vs_out.textureCoord = inTexCoord;
+
   vs_out.position = (model * vec4(inPosition , 1.0)).xyz;
   gl_Position = projection * view * vec4(vs_out.position, 1.0);
 }
