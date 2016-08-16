@@ -9,6 +9,7 @@ in VoxelData
   vec3 position;
   vec3 normal;
   vec2 textureCoord;
+  int faceIndex;
 } fs_in;
 
 out vec4 color;
@@ -32,9 +33,9 @@ uint convVec4ToRGBA8( vec4 val)
 void main()
 {
   float res = gridResolution - 1;
-  ivec3 coords = ivec3(round(fs_in.position.x*(res)),// + fs_in.faceIndex * gridResolution), 
+  ivec3 coords = ivec3(round(fs_in.position.x*(res)) + fs_in.faceIndex * gridResolution, 
                        round(fs_in.position.y*(res)), 
-                       round((fs_in.position.z)*(res)));
+                       round(fs_in.position.z*(res)));
   
   vec4 val = texture(sampler, fs_in.textureCoord);
   val.rgba *= 255.0f;
@@ -50,10 +51,33 @@ void main()
     newVal = convVec4ToRGBA8(avg);
   }
   
-  for(int i = 1; i < 6; i++)
+  /*
+  for(int i = 1; i < 6; ++i)
   {
     ivec3 s = coords;
     s.x += i * gridResolution;
-    imageAtomicExchange(voxelImage, s, 0xffffffff);
+    imageAtomicExchange(voxelImage, s, newVal);
   }
+  */
+  //testing:
+  
+  //ivec3 s = coords;
+  //imageAtomicExchange(voxelImage, s, 0xff00ffff);
+
+  /*
+  s.x += gridResolution;
+  imageAtomicExchange(voxelImage, s, 0xff0000ff);
+  
+  s.x += gridResolution;
+  imageAtomicExchange(voxelImage, s, 0x0000ff00);
+  
+  s.x += gridResolution;
+  imageAtomicExchange(voxelImage, s, 0x00ff0099);
+  
+  s.x += gridResolution;
+  imageAtomicExchange(voxelImage, s, 0x00ff00ff);
+  
+  s.x += gridResolution;
+  imageAtomicExchange(voxelImage, s, 0x00ff0888);
+  */
 }

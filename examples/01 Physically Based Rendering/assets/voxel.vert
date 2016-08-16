@@ -16,7 +16,7 @@ out VertexData
 
 void main()
 {
-  vs_out.normal = (vec4(inNormal, 1.0)).xyz;
+  vs_out.normal = inNormal;
   vs_out.textureCoord = inTexCoord;
   vs_out.position = (projection * view * model * vec4(inPosition , 1.0)).xyz;
 }

@@ -115,47 +115,94 @@ GLuint voxelizeDepthRenderbuffer;
 GLuint voxelizeFBO;
 static GLenum voxelImageFormat = GL_RGBA8;
 
+static bool showProjX = true;
+static bool showProjY = true;
+static bool showProjZ = true;
+
 static void voxelize(int32 windowWidth, int32 windowHeight)
 {
-    pipeline.useProgramStage(voxelGeom);
-    pipeline.useProgramStage(voxelFrag);
-    pipeline.useProgramStage(voxelVert);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
-
     glViewport(0, 0, voxelGridResolution, voxelGridResolution);
     glDisable(GL_DEPTH_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
     glDisable(GL_CULL_FACE);
+    
+    pipeline.useProgramStage(voxelGeom);
+    pipeline.useProgramStage(voxelFrag);
+    pipeline.useProgramStage(voxelVert);
 
     float halfGridSize = voxelGridWorldSize / 2.0f;
+    glm::vec3 gridPos = glm::vec3(0, 0, halfGridSize);
+    glm::mat4 gridRotX = glm::rotate(glm::mat4(), PI / 2.0f, glm::vec3(1, 0, 0));
+    glm::mat4 gridRotY = glm::rotate(glm::mat4(), -PI / 2.0f, glm::vec3(0, 1, 0));
     glm::mat4 orthoProj = glm::ortho(-halfGridSize, halfGridSize, -halfGridSize, halfGridSize, 0.0f, (float)voxelGridWorldSize);
-    glm::mat4 orthoView = glm::inverse(glm::translate(glm::mat4(), glm::vec3(0, 0, halfGridSize)));
-    glm::mat3 projMatrices[] = { glm::mat3(0.0, 0.0, 1.0,
-                                           0.0, 1.0, 0.0,
-                                           1.0, 0.0, 0.0),
-                                 glm::mat3(1.0, 0.0, 0.0,
-                                           0.0, 0.0, 1.0,
-                                           0.0, 1.0, 0.0),
-                                 glm::mat3(1.0, 0.0, 0.0,
-                                           0.0, 1.0, 0.0,
-                                           0.0, 0.0, 1.0) };
+    glm::mat4 projMatrices[] = { glm::mat4(0.0f, 0.0f, 1.0f, 0.0f,
+                                           0.0f, 1.0f, 0.0f, 0.0f, 
+                                           -1.0f, 0.0f, 0.0f, 1.0f,
+                                           0.0f, 0.0f, 0.0f, 0.0f),
+
+                                 glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                                           0.0f, 0.0f, 1.0f, 0.0f,
+                                           0.0f, -1.0f, 0.0f, 1.0f,
+                                           0.0f, 0.0f, 0.0f, 0.0f),
+
+                                 glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                                           0.0f, 1.0f, 0.0f, 0.0f,
+                                           0.0f, 0.0f, 1.0f, 0.0f,
+                                           0.0f, 0.0f, 0.0f, 0.0f)};
+
     glProgramUniformMatrix4fv(voxelVert.id, 5, 1, GL_FALSE, &orthoProj[0][0]);
-    glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
     glProgramUniformMatrix4fv(voxelVert.id, 7, 1, GL_FALSE, &world[0][0]);
-    glProgramUniformMatrix3fv(voxelGeom.id, 15, 3, GL_FALSE, &projMatrices[0][0][0]);
+    glProgramUniformMatrix4fv(voxelGeom.id, 15, 6, GL_TRUE, &projMatrices[0][0][0]);
     glProgramUniform1i(voxelFrag.id, 9, voxelGridResolution);
 
     glBindImageTexture(0, voxelTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
 
-    glDrawElementsInstanced(
-        GL_TRIANGLES,
-        (GLsizei)(indexBufferSize / sizeof(uint32)),
-        GL_UNSIGNED_INT,
-        0,
-        1);
+    glm::mat4 orthoView;
 
+    if (showProjX)
+    {
+        // X-axis
+        orthoView = glm::inverse(glm::translate(gridRotY, gridPos));
+        glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
+        glProgramUniform1i(voxelGeom.id, 11, 0);
+
+        glDrawElementsInstanced(
+            GL_TRIANGLES,
+            (GLsizei)(indexBufferSize / sizeof(uint32)),
+            GL_UNSIGNED_INT,
+            0,
+            1);
+    }
+    if (showProjY)
+    {
+        // Y-axis
+        orthoView = glm::inverse(glm::translate(gridRotX, gridPos));
+        glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
+        glProgramUniform1i(voxelGeom.id, 11, 1);
+
+        glDrawElementsInstanced(
+            GL_TRIANGLES,
+            (GLsizei)(indexBufferSize / sizeof(uint32)),
+            GL_UNSIGNED_INT,
+            0,
+            1);
+    }
+    if (showProjZ)
+    {
+        // Z-axis
+        orthoView = glm::inverse(glm::translate(glm::mat4(), gridPos));
+        glProgramUniformMatrix4fv(voxelVert.id, 6, 1, GL_FALSE, &orthoView[0][0]);
+        glProgramUniform1i(voxelGeom.id, 11, 2);
+
+        glDrawElementsInstanced(
+            GL_TRIANGLES,
+            (GLsizei)(indexBufferSize / sizeof(uint32)),
+            GL_UNSIGNED_INT,
+            0,
+            1);
+    }
     pipeline.clearProgramStage(voxelVert);
     pipeline.clearProgramStage(voxelFrag);
     pipeline.clearProgramStage(voxelGeom);
@@ -260,7 +307,7 @@ void PBRApp::init()
 
     uint32* indices;
     uint32 vertexBufferSize;
-    float* dataBof = loadBOF(Assets::getPath("sphere.bof"), &indices, &vertexBufferSize, &indexBufferSize);
+    float* dataBof = loadBOF(Assets::getPath("vivi.bof"), &indices, &vertexBufferSize, &indexBufferSize);
     vertexBuffer.create(dataBof, vertexBufferSize);
     indexBuffer.create(indices, indexBufferSize);
 
@@ -296,9 +343,9 @@ void PBRApp::init()
     glGenRenderbuffers(1, &voxelizeColorRenderbuffer);
     glGenRenderbuffers(1, &voxelizeDepthRenderbuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, voxelizeColorRenderbuffer);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_RGBA32F, voxelGridResolution, voxelGridResolution);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA32F, voxelGridResolution, voxelGridResolution);
     glBindRenderbuffer(GL_RENDERBUFFER, voxelizeDepthRenderbuffer);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH_COMPONENT32F, voxelGridResolution, voxelGridResolution);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, voxelGridResolution, voxelGridResolution);
 
     glGenFramebuffers(1, &voxelizeFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, voxelizeFBO);
@@ -308,7 +355,7 @@ void PBRApp::init()
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
         LOG(info, "FBO Complete\n");
     else
-        LOG(info, "FBO Not Complete");
+        LOG(info, "FBO Not Complete\n");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -492,6 +539,11 @@ void PBRApp::render(float dt)
         ImGui::Checkbox("Show Model", &showModel);
         if (ImGui::Button("Clear"))
             clearVoxels();
+        ImGui::Checkbox("x proj", &showProjX);
+        ImGui::SameLine();
+        ImGui::Checkbox("y proj", &showProjY);
+        ImGui::SameLine();
+        ImGui::Checkbox("z proj", &showProjZ);
         ImGui::End();
     }
 

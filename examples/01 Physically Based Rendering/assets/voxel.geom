@@ -3,7 +3,8 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-layout (location = 15) uniform mat3 projectionMatrices[3];
+layout (location = 15) uniform mat4 projMatrices[3];
+layout (location = 11) uniform int projAxis;
 
 out gl_PerVertex { vec4 gl_Position; };
 
@@ -14,25 +15,26 @@ in VertexData
   vec2 textureCoord;
 } gs_in[];
 
-
 out VoxelData
 {
   vec3 position;
   vec3 normal;
   vec2 textureCoord;
+  int faceIndex;
 } gs_out;
 
-uint getDominantAxis()
+int getDominantAxis()
 {
-  const vec3 axes[3] = vec3[3](vec3(1.0, 0.0, 0.0),
-                               vec3(0.0, 1.0, 0.0),
-                               vec3(0.0, 0.0, 1.0));
+  const vec3 axes[2] = vec3[2](vec3(0.0, 0.0, 1.0),
+                               vec3(0.0, 0.0, -1.0));
   
-  uint projectionIndex;
+  int projectionIndex;
   float greatestArea = 0.0;
-  for(int i = 0; i < 3; ++i)
+  int axis = projAxis*2;
+  for(int i = 0; i < 2; ++i)
   {
-    float area = abs(dot(axes[i], normalize(cross(gs_in[1].position - gs_in[0].position, gs_in[2].position - gs_in[0].position))));
+    float area = dot(axes[i], normalize(cross(gs_in[1].position - gs_in[0].position, 
+                                              gs_in[2].position - gs_in[0].position)));
     if(area > greatestArea)
     {
       greatestArea = area;
@@ -45,15 +47,17 @@ uint getDominantAxis()
 
 void main()
 {  
-  uint projectionIndex = getDominantAxis();
+  gs_out.faceIndex = getDominantAxis() + (2 * projAxis);
   
   for(int i = 0; i < 3; i++)
   {
-    gs_out.position = (gs_in[i].position + vec3(1.0, 1.0, 1.0)) / 2.0;
+    // convert position from NDC to the voxel image coordinates 
+    vec3 c = ((gs_in[i].position + vec3(1.0, 1.0, 1.0)) / 2.0);
+    gs_out.position = (projMatrices[projAxis] * vec4(c, 1.0)).xyz;
     gs_out.normal = gs_in[i].normal;
     gs_out.textureCoord = gs_in[i].textureCoord;
     
-    gl_Position = vec4(projectionMatrices[projectionIndex] * gs_in[i].position, 1.0);
+    gl_Position = vec4(gs_in[i].position, 1.0);
     
     EmitVertex();
   }
