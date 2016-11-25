@@ -9,3 +9,5 @@ ggfx is a framework for implementing and testing various graphics programming te
 - Live shader reloading
 - GPU voxelization of triangle meshes
 - ImGui integration
+
+![](http://joonatan.fi/images/dragon.png)
