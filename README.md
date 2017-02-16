@@ -1,8 +1,8 @@
 # ggfx
 
-ggfx is a framework for implementing and testing various graphics programming techniques.
+ggfx is a framework for implementing and testing various graphics programming techniques. Work in progress.
 
-### Features so far
+### Stuff I'm working on
 
 - Modern physically based rendering using OpenGL
 - Model loading using custom binary file format
